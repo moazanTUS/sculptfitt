@@ -1,0 +1,14 @@
+opencv-python~=4.12.0.88
+mediapipe~=0.10.31
+numpy~=2.2.6
+boto3~=1.42.15
+pymysql~=1.1.2
+
+fastapi~=0.115.0
+uvicorn[standard]~=0.30.0
+pydantic~=2.8.2
+PyJWT~=2.9.0
+requests~=2.32.3
+python-multipart~=0.0.9
+python-dotenv~=1.0.0
+
