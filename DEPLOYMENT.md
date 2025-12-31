@@ -32,7 +32,7 @@ git init
 git add .
 git commit -m "Initial commit - SculpFit deployment ready"
 git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/sculpt.git
+git remote add origin https://github.com/moazanTUS/sculptfitt.git
 git push -u origin main
 ```
 
