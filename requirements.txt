@@ -1,15 +1,31 @@
+# Image/Video Processing
 opencv-python~=4.12.0.88
 mediapipe~=0.10.31
 numpy~=2.2.6
-boto3~=1.42.15
+
+# Database
 pymysql~=1.1.2
+
+# AI/ML
 google-generativeai~=0.5.0
 
+# Web Framework
 fastapi~=0.115.0
 uvicorn[standard]~=0.30.0
-pydantic~=2.8.2
+starlette~=0.27.0
+
+# Authentication & Security
 PyJWT~=2.9.0
+cryptography~=41.0.0
+
+# Data Validation & Serialization
+pydantic~=2.8.2
+
+# HTTP & Utilities
 requests~=2.32.3
 python-multipart~=0.0.9
 python-dotenv~=1.0.0
+
+# Optional: AWS (keep if using S3)
+boto3~=1.42.15
 
