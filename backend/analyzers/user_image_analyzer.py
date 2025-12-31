@@ -165,7 +165,7 @@ class UserImageAnalyzer:
 
         client = genai.Client(api_key=self.api_key) if self.api_key else genai.Client()
 
-        image_part = types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
+        image_part = genai.types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
 
         # Step 1: Analyze body type and focus
         resp = client.models.generate_content(

@@ -183,15 +183,33 @@ def available_plans(days: int = None):
     Returns plans grouped by days_per_week, or filtered if days param provided.
     """
     try:
-        from .plan_store import get_available_plans_by_days
-        
         if days and days not in (3, 5):
             return JSONResponse(status_code=400, content={
                 "success": False, 
                 "error": "Invalid days value. Must be 3 or 5."
             })
         
-        plans = get_available_plans_by_days(days if days else None)
+        with get_conn() as conn:
+            with conn.cursor() as cur:
+                if days:
+                    cur.execute("SELECT id, name, days_per_week, primary_focus FROM workout_plans WHERE days_per_week = %s ORDER BY id ASC;", (days,))
+                else:
+                    cur.execute("SELECT id, name, days_per_week, primary_focus FROM workout_plans ORDER BY days_per_week ASC, id ASC;")
+                rows = cur.fetchall()
+        
+        # Group by days_per_week
+        plans = {}
+        for row in rows:
+            day_count = str(row["days_per_week"])
+            if day_count not in plans:
+                plans[day_count] = []
+            plans[day_count].append({
+                "id": row["id"],
+                "name": row["name"],
+                "days_per_week": row["days_per_week"],
+                "primary_focus": row["primary_focus"]
+            })
+        
         return {"success": True, "plans": plans}
     except Exception as e:
         return JSONResponse(status_code=400, content={"success": False, "error": str(e)})
@@ -277,22 +295,16 @@ async def select_plan(
     Creates a saved plan without requiring image analysis first.
     """
     try:
-        from .plan_store import get_available_plans_by_days
         from .user_plans import save_user_plan
         from .editable_plans import ensure_editable_copy
         
         # Verify plan exists
-        all_plans = get_available_plans_by_days()
-        found = False
-        selected_plan = None
-        for day_plans in all_plans.values():
-            for p in day_plans:
-                if p["id"] == plan_id:
-                    found = True
-                    selected_plan = p
-                    break
+        with get_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT id, name, days_per_week, primary_focus FROM workout_plans WHERE id = %s LIMIT 1;", (plan_id,))
+                selected_plan = cur.fetchone()
         
-        if not found:
+        if not selected_plan:
             return JSONResponse(status_code=404, content={
                 "success": False,
                 "error": "Plan not found"
