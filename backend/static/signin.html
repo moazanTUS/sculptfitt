@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Sign In - SculpFit</title>
+
+    <link rel="stylesheet" href="/static/styles.css?v=5">
+    <style>
+        .signinContainer {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: row;
+            align-items: stretch;
+            justify-content: center;
+            padding: 20px;
+            gap: 40px;
+        }
+
+        .welcomeWrapper {
+            display: flex;
+            gap: 40px;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .welcomeSection {
+            flex: 1;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .welcomeBrand {
+            text-align: center;
+        }
+
+        .welcomeBrand .logo {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .welcomeBrand h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 8px 0 0 0;
+            letter-spacing: -0.5px;
+        }
+
+        .welcomeBrand p {
+            color: var(--muted);
+            font-size: 14px;
+            margin: 8px 0 0 0;
+        }
+
+        .welcomeContent {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .welcomeContent h2 {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0;
+            color: #f0f4ff;
+        }
+
+        .welcomeContent>p {
+            font-size: 15px;
+            color: var(--muted);
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .featuresGrid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin: 10px 0;
+        }
+
+        .featureItem {
+            display: flex;
+            gap: 12px;
+            padding: 16px;
+            background: rgba(110, 255, 232, 0.05);
+            border: 1px solid rgba(110, 255, 232, 0.15);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .featureItem:hover {
+            background: rgba(110, 255, 232, 0.1);
+            border-color: rgba(110, 255, 232, 0.25);
+        }
+
+        .featureIcon {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .featureText h3 {
+            font-size: 13px;
+            font-weight: 600;
+            margin: 0 0 4px 0;
+            color: #f0f4ff;
+        }
+
+        .featureText p {
+            font-size: 12px;
+            color: var(--muted);
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .welcomeValue {
+            background: rgba(110, 255, 232, 0.08);
+            border: 1px solid rgba(110, 255, 232, 0.2);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .welcomeValue p {
+            font-size: 13px;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+            color: #6effe8;
+        }
+
+        .welcomeValue ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .welcomeValue li {
+            font-size: 12px;
+            color: var(--muted);
+            margin: 6px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .welcomeValue li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #6effe8;
+            font-weight: bold;
+        }
+
+        .signinCard {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 48px 40px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: var(--shadow);
+            flex-shrink: 0;
+            height: fit-content;
+            overflow: hidden;
+        }
+
+        #signinState {
+            width: 100%;
+            overflow: hidden;
+        }
+
+        #clerk-signin {
+            width: 100%;
+            overflow: hidden;
+        }
+
+        #clerk-signin>* {
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        .cl-card {
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        .cl-rootBox {
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        .signinBrand {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .signinBrand .logo {
+            font-size: 40px;
+            margin-bottom: 12px;
+        }
+
+        .signinBrand h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 8px 0 0 0;
+            letter-spacing: -0.5px;
+        }
+
+        .signinBrand p {
+            color: var(--muted);
+            font-size: 13px;
+            margin: 8px 0 0 0;
+        }
+
+        .signinContent {
+            margin-bottom: 32px;
+            text-align: center;
+        }
+
+        .signinContent h2 {
+            font-size: 20px;
+            margin: 0 0 8px 0;
+            font-weight: 600;
+        }
+
+        .signinContent p {
+            color: var(--muted);
+            font-size: 13px;
+            margin: 0;
+        }
+
+        .loadingBox {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            gap: 12px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--muted);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loadingBox p {
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .signinFooter {
+            text-align: center;
+            color: var(--muted);
+            font-size: 11px;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .signinFooter p {
+            margin: 0;
+        }
+
+        /* Customize Clerk widget to match design */
+        .cl-formButtonPrimary {
+            background: var(--accent) !important;
+            color: var(--bg) !important;
+            font-weight: 600 !important;
+        }
+
+        .cl-formButtonPrimary:hover,
+        .cl-formButtonPrimary:focus {
+            background: #5ee9de !important;
+        }
+
+        .cl-footerActionLink {
+            color: var(--accent) !important;
+        }
+
+        .cl-internal-hslayer {
+            background: transparent !important;
+        }
+
+        /* Responsive design */
+        @media (max-width: 1024px) {
+            .welcomeWrapper {
+                flex-direction: column;
+                gap: 30px;
+            }
+
+            .signinCard {
+                max-width: 100%;
+                width: 100%;
+            }
+
+            .welcomeSection {
+                text-align: center;
+            }
+
+            .welcomeBrand {
+                text-align: center;
+            }
+
+            .featuresGrid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .signinContainer {
+                padding: 16px;
+                gap: 24px;
+            }
+
+            .welcomeContent h2 {
+                font-size: 20px;
+            }
+
+            .welcomeBrand h1 {
+                font-size: 24px;
+            }
+
+            .signinCard {
+                padding: 32px 24px;
+            }
+
+            .signinBrand h1 {
+                font-size: 20px;
+            }
+        }
+    </style>
+
+    <script async crossorigin="anonymous"
+        data-clerk-publishable-key="pk_test_Zml0dGluZy1tb3VzZS02Ni5jbGVyay5hY2NvdW50cy5kZXYk"
+        src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js">
+        </script>
+</head>
+
+<body>
+    <div class="bgAura"></div>
+    <div class="signinContainer">
+        <div class="welcomeWrapper">
+            <!-- Welcome Section -->
+            <div class="welcomeSection">
+                <div class="welcomeBrand">
+                    <div class="logo">⚡</div>
+                    <h1>SculpFit</h1>
+                    <p>AI-Powered Fitness Coach</p>
+                </div>
+
+                <div class="welcomeContent">
+                    <h2>Transform Your Fitness Journey</h2>
+                    <p>SculpFit combines cutting-edge AI technology with personalized fitness coaching to help you
+                        achieve your goals faster and smarter.</p>
+
+                    <div class="featuresGrid">
+                        <div class="featureItem">
+                            <div class="featureIcon">📸</div>
+                            <div class="featureText">
+                                <h3>Body Analysis</h3>
+                                <p>Upload a photo and our AI analyzes your body type and fitness level</p>
+                            </div>
+                        </div>
+
+                        <div class="featureItem">
+                            <div class="featureIcon">🎯</div>
+                            <div class="featureText">
+                                <h3>Personalized Plans</h3>
+                                <p>Get custom workout plans tailored to your goals and body type</p>
+                            </div>
+                        </div>
+
+                        <div class="featureItem">
+                            <div class="featureIcon">🎬</div>
+                            <div class="featureText">
+                                <h3>Form Analysis</h3>
+                                <p>Record your exercises and get AI-powered feedback on your form</p>
+                            </div>
+                        </div>
+
+                        <div class="featureItem">
+                            <div class="featureIcon">📊</div>
+                            <div class="featureText">
+                                <h3>Track Progress</h3>
+                                <p>Monitor your reps, sets, and form improvements over time</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="welcomeValue">
+                        <p><strong>Why SculpFit?</strong></p>
+                        <ul>
+                            <li>AI-powered personalized coaching tailored to your body and goals</li>
+                            <li>Real-time form feedback to maximize results and prevent injury</li>
+                            <li>Progress tracking across multiple exercises and body types</li>
+                            <li>Plans designed for ectomorphs, mesomorphs, and endomorphs</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sign In Section -->
+            <div class="signinCard">
+                <div class="signinBrand">
+                    <div class="logo">⚡</div>
+                    <h1>SculpFit</h1>
+                    <p>AI-Powered Fitness Coach</p>
+                </div>
+
+                <div class="signinContent">
+                    <h2>Sign In</h2>
+                    <p>Continue to your fitness journey</p>
+
+                    <div id="signinState">
+                        <div class="loadingBox">
+                            <div class="spinner"></div>
+                            <p>Loading...</p>
+                        </div>
+                    </div>
+
+                    <div class="signinFooter">
+                        <p>Secure sign-in powered by Clerk</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Initialize Clerk
+            async function initializeSignIn() {
+                try {
+                    // Wait for Clerk to be available
+                    let attempts = 0;
+                    while (!window.Clerk && attempts < 100) {
+                        await new Promise(r => setTimeout(r, 50));
+                        attempts++;
+                    }
+
+                    if (!window.Clerk) {
+                        throw new Error('Clerk failed to load');
+                    }
+
+                    // Load Clerk
+                    await window.Clerk.load();
+
+                    const signinState = document.getElementById('signinState');
+
+                    // If user is already signed in, redirect to app
+                    if (window.Clerk.user) {
+                        window.location.href = '/';
+                        return;
+                    }
+
+                    // Render the sign-in widget
+                    signinState.innerHTML = '<div id="clerk-signin"></div>';
+
+                    await window.Clerk.mountSignIn(document.getElementById('clerk-signin'), {
+                        routing: 'path',
+                        path: '/signin',
+                        redirectUrl: '/',
+                        appearance: {
+                            baseTheme: undefined,
+                            variables: {
+                                colorPrimary: '#6effe8',
+                                colorBackground: '#151d3a',
+                                colorInputBackground: '#0f1438',
+                                colorInputBorder: 'rgba(255, 255, 255, 0.08)',
+                                colorText: '#f0f4ff',
+                                colorTextSecondary: '#a8b5d1',
+                            },
+                            elements: {
+                                rootBox: 'padding: 0;',
+                                cardBox: 'border: 1px solid rgba(255, 255, 255, 0.08); background: transparent;',
+                                footerActionLink: 'color: #6effe8;',
+                                formFieldInput: 'background: #0f1438; border-color: rgba(255, 255, 255, 0.08); color: #f0f4ff;',
+                                formFieldInputPlaceholder: 'color: #a8b5d1;',
+                                button: 'background: #6effe8; color: #0a0e27; font-weight: 600;',
+                                buttonPrimary: 'background: #6effe8; color: #0a0e27;',
+                            }
+                        }
+                    });
+                } catch (error) {
+                    console.error('Sign-in initialization error:', error);
+                    const signinState = document.getElementById('signinState');
+                    signinState.innerHTML = '<div style="color: #ff6b9d; text-align: center;"><p>Error loading sign-in. Please refresh the page.</p><pre style="text-align: left; font-size: 12px; overflow: auto;">' + error.message + '</pre></div>';
+                }
+            }
+
+            // Start initialization when page loads
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initializeSignIn);
+            } else {
+                initializeSignIn();
+            }
+        </script>
+</body>
+
+</html>

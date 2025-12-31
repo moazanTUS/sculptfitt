@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>SculpFit - AI Fitness Coach</title>
 
-  <link rel="stylesheet" href="/static/styles.css?v=3">
+  <link rel="stylesheet" href="/static/styles.css?v=5">
 
   <script async crossorigin="anonymous"
     data-clerk-publishable-key="pk_test_Zml0dGluZy1tb3VzZS02Ni5jbGVyay5hY2NvdW50cy5kZXYk"
@@ -26,160 +26,282 @@
         </div>
       </div>
       <div class="topActions">
-        <button class="btnGhost" id="refreshPlansBtn">Refresh</button>
         <div id="authSlot"></div>
       </div>
     </header>
 
-    <section class="hero card">
-      <div class="heroCopy">
-        <p class="eyebrow">Real-time Analysis</p>
-        <h1>Perfect Your Form<br>Every Rep.</h1>
-        <p class="muted">
-          Upload a photo or video. Get instant AI analysis, personalized workout plans, and form corrections to maximize
-          your results.
-        </p>
-        <div class="statusRow">
-          <div class="pill">
-            <span class="pulse"></span>
-            <span id="jsStatus" class="pillValue">Loaded</span>
-          </div>
-          <div id="authError" class="pill pillWarn" style="display:none;"></div>
-        </div>
-      </div>
-      <div class="heroPanel">
-        <div class="panelHeader">
-          <div>
-            <div class="panelTitle">Sign In</div>
-            <div class="panelSub">Secure & Free</div>
-          </div>
-        </div>
-        <div class="panelBody" id="signedOut" style="display:none;">
-          <div id="signIn"></div>
-        </div>
-        <div class="panelBody" id="signedIn" style="display:none;">
-          <div class="pill">
-            <span class="pulse"></span>
-            <span>Ready to train</span>
-          </div>
-        </div>
-      </div>
-    </section>
+    <!-- Navigation Tabs -->
+    <nav class="mainNav">
+      <button class="navBtn active" data-page="analysis">📸 Body Analysis</button>
+      <button class="navBtn" data-page="video">🎥 Video Analysis</button>
+      <button class="navBtn" data-page="workouts">📋 Workouts</button>
+    </nav>
 
-    <section id="signedInContent" style="display:none;">
-      <!-- Quick Actions Section -->
-      <div class="sectionHeader">
-        <h2>Get Started</h2>
-        <p class="muted">Choose a plan or analyze your form</p>
-      </div>
-
-      <div class="grid">
-        <div class="card">
-          <div class="cardHeader">
-            <div>
-              <p class="eyebrow">🎯 Plans</p>
-              <h3>Browse Workouts</h3>
+    <main class="mainContent">
+      <!-- Body Analysis Page -->
+      <div class="page active" id="analysis-page" data-page="analysis">
+        <section class="hero card">
+          <div class="heroCopy">
+            <p class="eyebrow">Real-time Analysis</p>
+            <h1>Analyze Your Body<br>Get Custom Plans.</h1>
+            <p class="muted">
+              Upload a photo. Get instant AI analysis, body type detection, and personalized workout plans optimized for
+              your physique.
+            </p>
+            <div class="statusRow">
+              <div class="pill">
+                <span class="pulse"></span>
+                <span id="jsStatus" class="pillValue">Loaded</span>
+              </div>
+              <div id="authError" class="pill pillWarn" style="display:none;"></div>
             </div>
           </div>
-          <div class="stack">
-            <p class="muted">Pick a 3-day or 5-day plan tailored to your goals and schedule.</p>
-            <button class="btn" id="selectPlanBtn">Browse Plans</button>
-          </div>
-        </div>
+        </section>
 
         <div class="card">
           <div class="cardHeader">
-            <div>
-              <p class="eyebrow">📸 Analysis</p>
-              <h3>Body Photo</h3>
-            </div>
+            <p class="eyebrow">Posture scan</p>
+            <h2>Analyze Body Image</h2>
           </div>
           <div class="stack">
-            <p class="muted">Upload a photo to get personalized plan recommendations.</p>
-            <label class="label" for="imageInput">Choose photo</label>
+            <label class="label">Upload photo</label>
             <input id="imageInput" type="file" accept="image/*" />
-            <label class="label">Preferred Plan Duration</label>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+
+            <label class="label">Training Level</label>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
               <label
                 style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 10px; border: 1.5px solid var(--border); border-radius: 10px; background: rgba(255, 255, 255, 0.03); transition: all 0.2s ease;">
-                <input type="radio" name="planDays" value="3" checked style="cursor: pointer;" />
-                <span>3-Day Plan</span>
+                <input type="radio" name="difficulty" value="beginner" checked style="cursor: pointer;" />
+                <span>Beginner</span>
               </label>
               <label
                 style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 10px; border: 1.5px solid var(--border); border-radius: 10px; background: rgba(255, 255, 255, 0.03); transition: all 0.2s ease;">
-                <input type="radio" name="planDays" value="5" style="cursor: pointer;" />
-                <span>5-Day Plan</span>
+                <input type="radio" name="difficulty" value="intermediate" checked style="cursor: pointer;" />
+                <span>Intermediate</span>
+              </label>
+              <label
+                style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 10px; border: 1.5px solid var(--border); border-radius: 10px; background: rgba(255, 255, 255, 0.03); transition: all 0.2s ease;">
+                <input type="radio" name="difficulty" value="advanced" style="cursor: pointer;" />
+                <span>Advanced</span>
               </label>
             </div>
+
+            <label class="label">Days Per Week</label>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+              <label
+                style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 10px; border: 1.5px solid var(--border); border-radius: 10px; background: rgba(255, 255, 255, 0.03); transition: all 0.2s ease;">
+                <input type="radio" name="daysPerWeek" value="3" checked style="cursor: pointer;" />
+                <span>3 days</span>
+              </label>
+              <label
+                style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 10px; border: 1.5px solid var(--border); border-radius: 10px; background: rgba(255, 255, 255, 0.03); transition: all 0.2s ease;">
+                <input type="radio" name="daysPerWeek" value="4" checked style="cursor: pointer;" />
+                <span>4 days</span>
+              </label>
+              <label
+                style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 10px; border: 1.5px solid var(--border); border-radius: 10px; background: rgba(255, 255, 255, 0.03); transition: all 0.2s ease;">
+                <input type="radio" name="daysPerWeek" value="5" style="cursor: pointer;" />
+                <span>5 days</span>
+              </label>
+              <label
+                style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 10px; border: 1.5px solid var(--border); border-radius: 10px; background: rgba(255, 255, 255, 0.03); transition: all 0.2s ease;">
+                <input type="radio" name="daysPerWeek" value="6" style="cursor: pointer;" />
+                <span>6 days</span>
+              </label>
+            </div>
+
             <button class="btn" id="analyzeImageBtn">Analyze Photo</button>
             <pre id="imageResult" class="result muted"></pre>
           </div>
         </div>
 
+        <!-- Generated Workout Results (Read-Only) -->
+        <div id="workoutResultsContainer" class="card" style="display: none;">
+          <div class="cardHeader">
+            <p class="eyebrow">Your Generated Workout</p>
+            <h2 id="workoutTitle">Workout Plan</h2>
+          </div>
+          <div id="workoutDetailsDisplay" class="stack"></div>
+        </div>
+      </div>
+
+      <!-- Video Analysis Page -->
+      <div class="page" id="video-page" data-page="video">
+        <section class="hero card">
+          <div class="heroCopy">
+            <p class="eyebrow">Form Check</p>
+            <h1>Perfect Your<br>Technique.</h1>
+            <p class="muted">
+              Upload a video of your workout. Get real-time form feedback, exercise corrections, and tips to maximize
+              gains safely.
+            </p>
+          </div>
+        </section>
+
         <div class="card">
           <div class="cardHeader">
             <div>
-              <p class="eyebrow">📋 Plan Selection</p>
-              <h3>Browse Plans</h3>
+              <p class="eyebrow">Form check</p>
+              <h2>Analyze Video</h2>
             </div>
           </div>
-          <div class="stack">
-            <p class="muted">Get real-time form feedback on your exercise technique.</p>
-            <label class="label" for="exerciseSelect">Exercise</label>
-            <select id="exerciseSelect">
-              <option value="squats">Squats</option>
-              <option value="pushups">Pushups</option>
-              <option value="shoulder_press">Shoulder Press</option>
-            </select>
-            <label class="label" for="videoInput">Video clip</label>
-            <input id="videoInput" type="file" accept="video/*" />
-            <button class="btn" id="analyzeVideoBtn">Analyze Video</button>
-            <pre id="videoResult" class="result muted"></pre>
-            <a id="downloadLink" class="link" target="_blank" rel="noreferrer"></a>
+          <div class="gridCompact">
+            <div>
+              <label class="label" for="exerciseSelect">Exercise</label>
+              <select id="exerciseSelect">
+                <option value="squats">Squats</option>
+                <option value="pushups">Pushups</option>
+                <option value="shoulder_press">Shoulder Press</option>
+                <option value="deadlift">Deadlift</option>
+                <option value="bench_press">Bench Press</option>
+                <option value="pull_ups">Pull Ups</option>
+                <option value="rows">Rows</option>
+                <option value="dips">Dips</option>
+                <option value="lunges">Lunges</option>
+                <option value="leg_press">Leg Press</option>
+                <option value="planks">Planks</option>
+                <option value="burpees">Burpees</option>
+                <option value="mountain_climbers">Mountain Climbers</option>
+                <option value="bicep_curls">Bicep Curls</option>
+                <option value="tricep_extensions">Tricep Extensions</option>
+                <option value="lateral_raises">Lateral Raises</option>
+                <option value="none_of_the_above">None of the Above</option>
+              </select>
+            </div>
+            <div>
+              <label class="label" for="videoInput">Upload clip</label>
+              <input id="videoInput" type="file" accept="video/*" />
+            </div>
+          </div>
+
+          <!-- Video Preview & Trim Controls (hidden until video loaded) -->
+          <div id="videoPreviewSection" class="gridCompact" style="display: none; margin-top: 20px;">
+            <div style="grid-column: span 2;">
+              <video id="videoPreview" controls style="width: 100%; max-height: 200px; border-radius: 8px;"></video>
+            </div>
+
+            <!-- Visual Timeline Trimmer -->
+            <div style="grid-column: span 2; margin-top: 16px;">
+              <label class="label">Trim Video (Drag handles or click timeline)</label>
+              <div id="trimmerContainer"
+                style="position: relative; background: #1a1a2e; border-radius: 8px; height: 60px; cursor: pointer; overflow: hidden; border: 1px solid rgba(110, 255, 232, 0.3);">
+                <div id="trimmerTimeline"
+                  style="width: 100%; height: 30px; background: linear-gradient(90deg, rgba(110, 255, 232, 0.2) 0%, rgba(110, 255, 232, 0.1) 100%); position: relative; border-bottom: 1px solid rgba(110, 255, 232, 0.2);">
+                  <div id="playheadIndicator"
+                    style="position: absolute; width: 2px; height: 30px; background: #6effe8; left: 0%; top: 0; z-index: 3;">
+                  </div>
+                </div>
+                <div id="trimmerTrack" style="position: relative; width: 100%; height: 30px;">
+                  <!-- Selection range -->
+                  <div id="trimmerSelection"
+                    style="position: absolute; top: 5px; height: 20px; background: rgba(110, 255, 232, 0.3); border: 2px solid #6effe8; border-radius: 4px; left: 0%; width: 100%; z-index: 2;">
+                  </div>
+                  <!-- Start handle -->
+                  <div id="trimmerStartHandle"
+                    style="position: absolute; top: 0; left: 0%; width: 12px; height: 30px; background: #6effe8; cursor: ew-resize; z-index: 4; border-radius: 2px 0 0 2px;">
+                  </div>
+                  <!-- End handle -->
+                  <div id="trimmerEndHandle"
+                    style="position: absolute; top: 0; right: 0%; width: 12px; height: 30px; background: #6effe8; cursor: ew-resize; z-index: 4; border-radius: 0 2px 2px 0;">
+                  </div>
+                </div>
+                <div
+                  style="position: absolute; bottom: 2px; left: 4px; right: 4px; font-size: 10px; color: #6effe8; text-align: center; pointer-events: none;">
+                  <span id="trimmerTimeDisplay">00:00 - 00:00</span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label class="label" for="repCount">How many reps?</label>
+              <input id="repCount" type="number" min="1" max="20" placeholder="3-5 reps" value="5" />
+            </div>
+
+            <!-- Hidden inputs for trimmer values -->
+            <input id="startTime" type="hidden" value="0" />
+            <input id="endTime" type="hidden" value="0" />
+          </div>
+
+          <button class="btn" id="analyzeVideoBtn">Analyze Video</button>
+          <pre id="videoResult" class="result muted"></pre>
+          <a id="downloadLink" class="link" target="_blank" rel="noreferrer"></a>
+        </div>
+      </div>
+
+      <!-- Workouts Page -->
+      <div class="page" id="workouts-page" data-page="workouts">
+        <section class="hero card">
+          <div class="heroCopy">
+            <p class="eyebrow">Your Library</p>
+            <h1>Manage Your<br>Workouts.</h1>
+            <p class="muted">
+              View all your personalized plans, browse available workouts, edit exercises, and track your progress.
+            </p>
+          </div>
+        </section>
+
+        <!-- Explore Pre-Made Workouts -->
+        <div class="card" style="padding: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <div>
+              <p class="eyebrow" style="margin: 0; font-size: 11px;">Browse Plans</p>
+              <h3 style="margin: 2px 0 0 0; font-size: 16px;">Explore Workouts</h3>
+            </div>
+          </div>
+          <button class="btn" style="width: 100%; padding: 12px; font-size: 13px;" id="exploreWorkoutsBtn">Explore
+            Workouts</button>
+          <div style="display: none;" id="explorePlansContainer">
+            <div
+              style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-top: 12px;"
+              id="explorePlansGrid">
+              <div class="muted" style="font-size: 12px;">Loading...</div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Workout Plans Section -->
-      <div class="sectionHeader" style="margin-top: 40px;">
-        <h2>Your Workouts</h2>
-        <p class="muted">Manage your saved plans and customize exercises</p>
-      </div>
+        <div class="card">
+          <div class="cardHeader">
+            <div>
+              <p class="eyebrow">Your library</p>
+              <h2>My Plans</h2>
+              <p class="muted">Open a plan to edit days, exercises, sets, and rest.</p>
+            </div>
+            <button class="btnSmall" id="refreshPlansBtn" style="align-self: flex-start;">↻ Refresh</button>
+          </div>
+          <div class="tableWrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Created</th>
+                  <th>Plan Name</th>
+                  <th>Focus</th>
+                  <th>Body Type</th>
+                  <th>Focus Areas</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="myPlansTbody">
+                <tr>
+                  <td colspan="6" class="muted">Loading...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-      <div class="card">
-        <div class="tableWrap">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Created</th>
-                <th>Plan Name</th>
-                <th>Days</th>
-                <th>Focus Area</th>
-                <th>Body Type</th>
-                <th>Focus Areas</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="myPlansTbody">
-              <tr>
-                <td colspan="7" class="muted" style="text-align: center; padding: 30px;">Loading plans...</td>
-              </tr>
-            </tbody>
-          </table>
+        <div id="editorCard" class="card" style="display:none;">
+          <div class="cardHeader">
+            <h2 style="margin:0;">📝 Plan Editor</h2>
+            <button class="btnGhost" id="closeEditorBtn">✕ Close</button>
+          </div>
+          <div id="editorBody" class="editorBody"></div>
         </div>
       </div>
 
-      <div id="editorCard" class="card" style="display:none;">
-        <div class="cardHeader">
-          <h2 style="margin:0;">📝 Plan Editor</h2>
-          <button class="btnGhost" id="closeEditorBtn">✕ Close</button>
-        </div>
-        <div id="editorBody" class="editorBody"></div>
-      </div>
-    </section>
+    </main>
   </div>
 
-  <!-- Consent modal -->
+  <!-- Consent modal for image analysis -->
   <div id="consentOverlay" class="modalOverlay" style="display:none;">
     <div class="modal">
       <div class="modalHeader">
@@ -200,21 +322,28 @@
     </div>
   </div>
 
-  <!-- Plan Selection Modal -->
-  <div id="planSelectionOverlay" class="modalOverlay" style="display:none;">
-    <div class="modal" style="max-height:85vh; max-width:600px; overflow-y:auto;">
+  <!-- Consent modal for video form analysis -->
+  <div id="videoConsentOverlay" class="modalOverlay" style="display:none;">
+    <div class="modal">
       <div class="modalHeader">
         <div>
-          <p class="eyebrow">Select Plan</p>
-          <h3 style="margin:6px 0 0; font-size: 18px;">Choose Your Workout</h3>
+          <p class="eyebrow">Your Permission</p>
+          <h3 style="margin:6px 0 0; font-size: 18px;">Use Your Video?</h3>
         </div>
-        <button class="btnGhost btnClose" id="planSelectionCloseBtn">✕</button>
+        <button class="btnGhost btnClose" id="videoConsentCloseBtn">✕</button>
       </div>
-      <p class="muted" style="margin:12px 0 16px;">
-        Pick the perfect plan for your schedule and goals.
+      <p class="muted" style="margin:12px 0 16px; line-height: 1.6;">
+        We'd like your permission to analyze your video. We will:
+      <ul style="margin: 12px 0; padding-left: 20px; color: #a8b5d1;">
+        <li>Process your video to provide form feedback</li>
+        <li>Never save or store your video</li>
+        <li>Never share your video with anyone</li>
+        <li>Delete it after analysis is complete</li>
+      </ul>
       </p>
-      <div id="planSelectionBody" class="modalBody">
-        <p class="muted">Loading plans...</p>
+      <div class="modalActions">
+        <button class="btnGhost" id="videoConsentCancelBtn">Decline</button>
+        <button class="btn" id="videoConsentAgreeBtn">I Consent</button>
       </div>
     </div>
   </div>
@@ -236,213 +365,7 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=3"></script>
-</body>
-
-</html>
-
-<!-- バ. Clerk (make sure you replace the publishable key) -->
-<script async crossorigin="anonymous"
-  data-clerk-publishable-key="pk_test_Zml0dGluZy1tb3VzZS02Ni5jbGVyay5hY2NvdW50cy5kZXYk"
-  src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js">
-  </script>
-</head>
-
-<body>
-  <div class="bgAura"></div>
-  <div class="wrap">
-    <header class="topbar">
-      <div class="brand">
-        <div class="logo">SF</div>
-        <div>
-          <div class="brandTitle">SculpFit</div>
-          <div class="brandNote">Computer-vision powered training</div>
-        </div>
-      </div>
-      <div class="topActions">
-        <button class="btnGhost" id="refreshPlansBtn">Refresh Plans</button>
-        <div id="authSlot"></div>
-      </div>
-    </header>
-
-    <section class="hero card">
-      <div class="heroCopy">
-        <p class="eyebrow">Smart coaching, instantly</p>
-        <h1>Visual feedback for every rep.</h1>
-        <p class="muted">
-          Upload a body photo or training clip. Get AI form analysis, annotated videos, and personalized plans tailored
-          to your focus areas.
-        </p>
-        <div class="statusRow">
-          <div class="pill">
-            <span class="pulse"></span>
-            JS status: <span id="jsStatus" class="pillValue">Not loaded</span>
-          </div>
-          <div id="authError" class="pill pillWarn" style="display:none;"></div>
-        </div>
-      </div>
-      <div class="heroPanel">
-        <div class="panelHeader">
-          <div class="panelTitle">Sign in to sync progress</div>
-          <div class="panelSub">Clerk-secured</div>
-        </div>
-        <div class="panelBody" id="signedOut" style="display:none;">
-          <div id="signIn"></div>
-        </div>
-        <div class="panelBody" id="signedIn" style="display:none;">
-          <div class="pill">Authenticated · Ready to train</div>
-        </div>
-      </div>
-    </section>
-
-    <section id="signedInContent" style="display:none;">
-      <div class="grid">
-        <div class="card">
-          <div class="cardHeader">
-            <div>
-              <p class="eyebrow">Quick start</p>
-              <h2>Choose a Workout Plan</h2>
-            </div>
-          </div>
-          <div class="stack">
-            <p class="muted">Select a pre-designed 3-day or 5-day workout plan and customize it to your needs.</p>
-            <button class="btn" id="selectPlanBtn">Browse Plans</button>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="cardHeader">
-            <div>
-              <p class="eyebrow">Posture scan</p>
-              <h2>Analyze Body Image</h2>
-            </div>
-          </div>
-          <div class="stack">
-            <label class="label" for="imageInput">Upload a clear, well-lit photo</label>
-            <input id="imageInput" type="file" accept="image/*" />
-            <pre id="imageResult" class="result muted"></pre>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="cardHeader">
-            <div>
-              <p class="eyebrow">Form check</p>
-              <h2>Analyze Video</h2>
-            </div>
-          </div>
-          <div class="gridCompact">
-            <div>
-              <label class="label" for="exerciseSelect">Exercise</label>
-              <select id="exerciseSelect">
-                <option value="squats">Squats</option>
-                <option value="pushups">Pushups</option>
-                <option value="shoulder_press">Shoulder Press</option>
-              </select>
-            </div>
-            <div>
-              <label class="label" for="videoInput">Upload clip</label>
-              <input id="videoInput" type="file" accept="video/*" />
-            </div>
-          </div>
-          <button class="btn" id="analyzeVideoBtn">Analyze Video</button>
-          <pre id="videoResult" class="result muted"></pre>
-          <a id="downloadLink" class="link" target="_blank" rel="noreferrer"></a>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="cardHeader">
-          <div>
-            <p class="eyebrow">Your library</p>
-            <h2>My Plans</h2>
-            <p class="muted">Open a plan to edit days, exercises, sets, and rest.</p>
-          </div>
-        </div>
-        <div class="tableWrap">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Created</th>
-                <th>Plan</th>
-                <th>Focus</th>
-                <th>Body</th>
-                <th>Focus Areas</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="myPlansTbody"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div id="editorCard" class="card" style="display:none;">
-        <div class="cardHeader">
-          <h2 style="margin:0;">Plan Editor</h2>
-          <button class="btnGhost" id="closeEditorBtn">Close</button>
-        </div>
-        <div id="editorBody" class="editorBody"></div>
-      </div>
-    </section>
-  </div>
-
-  <!-- Consent modal -->
-  <div id="consentOverlay" class="modalOverlay" style="display:none;">
-    <div class="modal">
-      <div class="modalHeader">
-        <div>
-          <p class="eyebrow">Privacy first</p>
-          <h3 style="margin:4px 0 0;">Consent to analyze your image</h3>
-        </div>
-        <button class="btnGhost btnClose" id="consentCloseBtn">✕</button>
-      </div>
-      <p class="muted" style="margin:10px 0 14px;">
-        We process your uploaded photo to detect posture, body type, and focus areas to tailor your workout plan.
-        Nothing is shared publicly.
-      </p>
-      <div class="modalActions">
-        <button class="btnGhost" id="consentCancelBtn">Not now</button>
-        <button class="btn" id="consentAgreeBtn">I agree</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Plan Selection Modal -->
-  <div id="planSelectionOverlay" class="modalOverlay" style="display:none;">
-    <div class="modal" style="max-height:80vh; overflow-y:auto;">
-      <div class="modalHeader">
-        <div>
-          <p class="eyebrow">Choose your plan</p>
-          <h3 style="margin:4px 0 0;">Select a workout plan</h3>
-        </div>
-        <button class="btnGhost btnClose" id="planSelectionCloseBtn">✕</button>
-      </div>
-      <p class="muted" style="margin:10px 0 14px;">
-        Pick a pre-designed plan based on your fitness goals and available workout days.
-      </p>
-      <div id="planSelectionBody" class="modalBody">
-        <p class="muted">Loading plans...</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Generic message modal -->
-  <div id="messageOverlay" class="modalOverlay" style="display:none;">
-    <div class="modal">
-      <div class="modalHeader">
-        <div>
-          <p class="eyebrow">Heads up</p>
-          <h3 id="messageTitle" style="margin:4px 0 0;">Notice</h3>
-        </div>
-        <button class="btnGhost btnClose" id="messageCloseBtn">✕</button>
-      </div>
-      <pre id="messageBody" class="muted modalBody"></pre>
-      <div class="modalActions">
-        <button class="btn" id="messageOkBtn">OK</button>
-      </div>
-    </div>
-  </div>
-
+  <script src="/static/app.js?v=4"></script>
 </body>
 
 </html>

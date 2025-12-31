@@ -3,29 +3,27 @@ import shutil
 import csv
 import io
 import os
+import json
 from pathlib import Path
-from typing import Literal
 from datetime import datetime
 
 # Load environment variables
 from dotenv import load_dotenv
+load_dotenv()  # Load from .env file
+from dotenv import load_dotenv
 load_dotenv()
 
-from fastapi import FastAPI, UploadFile, File, Form, Request, Depends
+from fastapi import FastAPI, UploadFile, File, Form, Request, Depends, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from .analyzers.squat_analyzer import SquatAnalyzer
-from .analyzers.pushup_analyzer import PushupAnalyzer
-from .analyzers.shoulder_press_analyzer import ShoulderPressAnalyzer
+from .analyzers.gemini_form_analyzer import GeminiFormAnalyzer
 from .analyzers.user_image_analyzer import UserImageAnalyzer
 
-from .plan_matcher import match_plan
 from .clerk_auth import require_clerk_user
 from .user_plans import save_user_plan, list_user_plans
-from .plan_store import ensure_plan_in_db
 
 # ✅ DB helper
 from .db import get_conn
@@ -41,26 +39,46 @@ from .editable_plans import (
 )
 
 BASE_DIR = Path(__file__).resolve().parent
-UPLOADS_DIR = BASE_DIR / "uploads"
 OUTPUTS_DIR = BASE_DIR / "outputs"
 STATIC_DIR = BASE_DIR / "static"
 
-UPLOADS_DIR.mkdir(exist_ok=True)
+OUTPUTS_DIR.mkdir(exist_ok=True)
 OUTPUTS_DIR.mkdir(exist_ok=True)
 STATIC_DIR.mkdir(exist_ok=True)
 
-# Load API key from environment variable
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+# Load API key - prioritize .env file to override old system environment variables  
+import dotenv
+# Force reload of .env file
+dotenv_path = Path(__file__).parent.parent / '.env'
+if dotenv_path.exists():
+    from dotenv import dotenv_values
+    env_vars = dotenv_values(str(dotenv_path))
+    GEMINI_API_KEY = env_vars.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
+else:
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+if not GEMINI_API_KEY:
+    raise ValueError("GEMINI_API_KEY environment variable is not set")
+
+print(f"[STARTUP] Using GEMINI_API_KEY: {GEMINI_API_KEY[:20]}...")  # Show first 20 chars
 
 app = FastAPI(title="SculpFit Web API")
 
+# CORS: Only allow your domain (set via environment variable)
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:8000").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:8000", "http://localhost:8000"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+@app.get("/health")
+async def health():
+    """Health check endpoint for Railway (no auth required)"""
+    return {"status": "ok"}
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 app.mount("/outputs", StaticFiles(directory=str(OUTPUTS_DIR)), name="outputs")
@@ -130,34 +148,25 @@ def home():
     return {"ok": True, "note": "index.html not found in backend/static"}
 
 
+@app.get("/signin")
+def signin():
+    """Serve the Clerk sign-in page"""
+    signin_path = STATIC_DIR / "signin.html"
+    if signin_path.exists():
+        return FileResponse(signin_path)
+    return {"ok": True, "note": "signin.html not found in backend/static"}
+
+
 @app.get("/health")
 def health():
     return {"ok": True}
 
 
-@app.get("/debug/uploads")
-def debug_uploads():
-    """Temporary debug endpoint: lists files under `backend/uploads`.
 
-    Use this to confirm the uploaded file exists and to inspect its saved path/size.
-    Remove this endpoint before deploying to production.
-    """
-    try:
-        files = []
-        for p in sorted(UPLOADS_DIR.iterdir()):
-            if p.is_file():
-                try:
-                    sz = p.stat().st_size
-                except Exception:
-                    sz = None
-                files.append({
-                    "name": p.name,
-                    "size": sz,
-                    "path": str(p.resolve()),
-                })
-        return {"ok": True, "uploads_dir": str(UPLOADS_DIR.resolve()), "files": files}
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"ok": False, "error": str(e)})
+@app.get("/api/health")
+def health():
+    """Health check endpoint."""
+    return {"ok": True, "message": "API is running"}
 
 
 @app.get("/api/me")
@@ -184,6 +193,76 @@ def available_plans(days: int = None):
         
         plans = get_available_plans_by_days(days if days else None)
         return {"success": True, "plans": plans}
+    except Exception as e:
+        return JSONResponse(status_code=400, content={"success": False, "error": str(e)})
+
+
+@app.get("/api/plans/{plan_id}")
+def get_plan_details(plan_id: int):
+    """
+    Get details of a specific available plan (without saving).
+    Returns the plan with all its exercises organized by day.
+    """
+    try:
+        with get_conn() as conn:
+            with conn.cursor() as cur:
+                # Get plan metadata
+                cur.execute(
+                    "SELECT id, name, days_per_week, primary_focus FROM workout_plans WHERE id = %s LIMIT 1;",
+                    (plan_id,)
+                )
+                plan = cur.fetchone()
+                
+                if not plan:
+                    return JSONResponse(status_code=404, content={
+                        "success": False,
+                        "error": f"Plan {plan_id} not found"
+                    })
+                
+                # Get exercises organized by day
+                cur.execute(
+                    """
+                    SELECT wd.day_number as day, ex.name as exercise, ex.primary_muscle, 
+                           wdi.sets, wdi.reps, wdi.rest_seconds
+                    FROM workout_days wd
+                    LEFT JOIN workout_day_items wdi ON wd.id = wdi.day_id
+                    LEFT JOIN exercises ex ON wdi.exercise_id = ex.id
+                    WHERE wd.plan_id = %s
+                    ORDER BY wd.day_number ASC, wdi.position ASC;
+                    """,
+                    (plan_id,)
+                )
+                exercises_raw = cur.fetchall()
+                
+                # Organize into days with items
+                days_dict = {}
+                for row in exercises_raw:
+                    day_num = row.get("day")
+                    if day_num not in days_dict:
+                        days_dict[day_num] = {"day": day_num, "items": []}
+                    
+                    # Only add item if exercise exists (not NULL)
+                    if row.get("exercise"):
+                        days_dict[day_num]["items"].append({
+                            "exercise": row.get("exercise"),
+                            "muscle_group": row.get("muscle_group"),
+                            "sets": row.get("sets"),
+                            "reps": row.get("reps"),
+                            "rest_seconds": row.get("rest_seconds")
+                        })
+                
+                days = sorted(days_dict.values(), key=lambda x: x["day"])
+                
+                return {
+                    "success": True,
+                    "plan": {
+                        "id": plan["id"],
+                        "name": plan["name"],
+                        "primary_focus": plan["primary_focus"],
+                        "days_per_week": plan["days_per_week"]
+                    },
+                    "days": days
+                }
     except Exception as e:
         return JSONResponse(status_code=400, content={"success": False, "error": str(e)})
 
@@ -266,16 +345,16 @@ async def analyze_image(
             plan_days = 3
 
         print(f"[analyze_image] plan_days selected: {plan_days}")
+        print(f"[analyze_image] Using API Key: {GEMINI_API_KEY}")
 
-        ext = Path(file.filename).suffix.lower() or ".jpg"
-        image_id = str(uuid.uuid4())
-        image_path = UPLOADS_DIR / f"{image_id}{ext}"
-
-        with open(image_path, "wb") as f:
-            shutil.copyfileobj(file.file, f)
+        # Read file into memory as BytesIO
+        file_bytes = await file.read()
+        image_file = io.BytesIO(file_bytes)
+        print(f"[analyze_image] Loaded image into memory: {len(file_bytes)} bytes")
 
         analyzer = UserImageAnalyzer(
-            image_path=str(image_path),
+            image_path=None,
+            image_bytes=image_file,
             api_key=GEMINI_API_KEY,
         )
 
@@ -287,104 +366,20 @@ async def analyze_image(
         print(f"[analyze_image] focus_areas: {focus_areas}")
         print(f"[analyze_image] body_type: {body_type}")
 
-        # Match plan with user's preferred plan_days and body_type
-        matched = match_plan(focus_areas, body_type=body_type)
+        # Note: Old endpoint - not currently used (uses /api/analyze-image-v2 instead)
+        # This can be deprecated in future versions
         
-        print(f"[analyze_image] matched plan: {matched}")
-
         saved_id = None
         plan_body_type = None
         plan_name = None
 
-        if matched and matched.get("plan"):
-            db_plan_id = None
+        # Return deprecated endpoint response
+        db_plan_id = None
+        if False:  # This entire block is deprecated
             plan_info = matched.get("plan")
             focus_area = plan_info.get("primary_focus") if isinstance(plan_info, dict) else str(plan_info)
             plan_name = plan_info.get("name") if isinstance(plan_info, dict) else None
             plan_body_type = plan_info.get("body_type") if isinstance(plan_info, dict) else None
-            
-            with get_conn() as conn:
-                with conn.cursor() as cur:
-                    # Priority 1: Body-type specific plan (closest day match if exact days don't exist)
-                    if body_type and body_type in ('ectomorph', 'mesomorph', 'endomorph'):
-                        # First try exact: body_type + focus + preferred days
-                        cur.execute(
-                            """
-                            SELECT id, name, days_per_week, body_type FROM workout_plans
-                            WHERE primary_focus = %s AND body_type = %s AND days_per_week = %s
-                            LIMIT 1;
-                            """,
-                            (focus_area, body_type, plan_days),
-                        )
-                        row = cur.fetchone()
-                        
-                        # If not found, get the closest days for this body_type + focus
-                        if not row:
-                            cur.execute(
-                                """
-                                SELECT id, name, days_per_week, body_type FROM workout_plans
-                                WHERE primary_focus = %s AND body_type = %s
-                                ORDER BY ABS(days_per_week - %s) ASC
-                                LIMIT 1;
-                                """,
-                                (focus_area, body_type, plan_days),
-                            )
-                            row = cur.fetchone()
-                        
-                        if row:
-                            db_plan_id = row["id"]
-                            plan_name = row["name"]
-                            plan_body_type = row["body_type"]
-                            print(f"[analyze_image] body-type plan found: {row['id']} - {row['name']} ({row['body_type']}) ({row['days_per_week']}-day)")
-                    
-                    # Priority 2: Generic plan (body_type = 'all' or NULL) - exact days preferred
-                    if not db_plan_id:
-                        cur.execute(
-                            """
-                            SELECT id, name, days_per_week, body_type FROM workout_plans
-                            WHERE primary_focus = %s AND (body_type = 'all' OR body_type IS NULL) AND days_per_week = %s
-                            LIMIT 1;
-                            """,
-                            (focus_area, plan_days),
-                        )
-                        row = cur.fetchone()
-                        
-                        # If not found, get any generic plan for this focus
-                        if not row:
-                            cur.execute(
-                                """
-                                SELECT id, name, days_per_week, body_type FROM workout_plans
-                                WHERE primary_focus = %s AND (body_type = 'all' OR body_type IS NULL)
-                                LIMIT 1;
-                                """,
-                                (focus_area,),
-                            )
-                            row = cur.fetchone()
-                        
-                        if row:
-                            db_plan_id = row["id"]
-                            plan_name = row["name"]
-                            plan_body_type = row["body_type"]
-                            print(f"[analyze_image] generic plan found: {row['id']} - {row['name']} ({row['days_per_week']}-day)")
-            
-            # If still no match, use the matched plan from pattern matching
-            if not db_plan_id:
-                print(f"[analyze_image] no specific plan found, using ensure_plan_in_db")
-                db_plan_id = ensure_plan_in_db(matched)
-
-            print(f"[analyze_image] using plan_id: {db_plan_id}")
-
-            print(f"[analyze_image] calling save_user_plan with plan_id={db_plan_id}, body_type={body_type}, focus_areas={focus_areas}")
-            saved_id = save_user_plan(
-                clerk_user_id=user["clerk_user_id"],
-                plan_id=db_plan_id,
-                body_type=body_type,
-                focus_areas=focus_areas,
-            )
-            print(f"[analyze_image] saved_id returned: {saved_id}")
-
-            # ✅ ensure editable copy
-            ensure_editable_copy(saved_id, user["clerk_user_id"])
 
         return {
             "success": True,
@@ -393,6 +388,150 @@ async def analyze_image(
             "detected_body_type": body_type,
             "selected_plan_body_type": plan_body_type,
             "selected_plan_name": plan_name,
+            "saved_id": saved_id,
+            "deprecated": "This endpoint is deprecated. Use /api/analyze-image-v2 instead",
+        }
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JSONResponse(status_code=400, content={"success": False, "error": str(e)})
+
+
+@app.post("/api/analyze-image-v2")
+async def analyze_image_v2(
+    file: UploadFile = File(...),
+    difficulty: str = Form(default="intermediate"),
+    daysPerWeek: str = Form(default="4"),
+    consent: bool = Form(default=True),
+    user=Depends(current_user),
+):
+    """
+    Simplified endpoint: Get complete workout from Gemini
+    - Analyze image with Gemini Vision
+    - Get body type + primary focus
+    - Gemini generates complete 4-day personalized workout plan
+    - Save plan to database
+    """
+    try:
+        # Validate difficulty
+        if difficulty not in ("beginner", "intermediate", "advanced"):
+            difficulty = "intermediate"
+        
+        print(f"[analyze_image_v2] difficulty: {difficulty}, consent: {consent}")
+        
+        # Read file into memory as BytesIO (never save to disk)
+        file_bytes = await file.read()
+        image_file = io.BytesIO(file_bytes)
+        print(f"[analyze_image_v2] Loaded image into memory: {len(file_bytes)} bytes")
+
+        # Use Gemini to analyze image and generate complete workout
+        analyzer = UserImageAnalyzer(
+            image_path=None,
+            image_bytes=image_file,
+            api_key=GEMINI_API_KEY,
+            difficulty=difficulty,
+            days_per_week=int(daysPerWeek),
+        )
+        report = analyzer.analyze()
+        result = report.get("result", {})
+        
+        print(f"[analyze_image_v2] Full result keys: {result.keys()}")
+        print(f"[analyze_image_v2] Result: {json.dumps(result, indent=2)[:500]}")
+        
+        body_type = result.get("body_type", "mesomorph")
+        primary_focus = result.get("primary_focus", "chest")
+        secondary_focuses = result.get("secondary_focuses", ["back", "shoulders"])
+        rationale = result.get("rationale", "")
+        
+        # Get the complete workout plan from Gemini (should be in result)
+        workout_plan = result.get("workout_plan", {})
+
+        print(f"[analyze_image_v2] Gemini analysis:")
+        print(f"  body_type: {body_type}")
+        print(f"  primary_focus: {primary_focus}")
+        print(f"  secondary_focuses: {secondary_focuses}")
+        print(f"  difficulty: {difficulty}")
+        print(f"  Generated plan with {len(workout_plan.get('days', []))} days")
+        
+        # Save plan to database
+        if user and user.get('clerk_user_id'):
+            clerk_user_id = user['clerk_user_id']
+            print(f"[analyze_image_v2] Saving plan for user: {clerk_user_id}")
+            
+            plan_name = f"{body_type.capitalize()} - {primary_focus.capitalize()} ({difficulty})"
+            try:
+                with get_conn() as conn:
+                    with conn.cursor() as cur:
+                        # Insert plan
+                        cur.execute(
+                            """INSERT INTO workout_plans (name, days_per_week, primary_focus, body_type)
+                               VALUES (%s, %s, %s, %s)""",
+                            (plan_name, len(workout_plan.get('days', [])), primary_focus, body_type)
+                        )
+                        plan_id = int(cur.lastrowid)
+                        
+                        # Insert days and exercises
+                        days = workout_plan.get('days', [])
+                        for day_obj in days:
+                            day_num = day_obj.get('day', 0)
+                            day_focus = day_obj.get('focus', '')
+                            
+                            cur.execute(
+                                """INSERT INTO workout_days (plan_id, day_number, title)
+                                   VALUES (%s, %s, %s)""",
+                                (plan_id, day_num, day_focus)
+                            )
+                            day_id = int(cur.lastrowid)
+                            
+                            # Insert exercises for this day
+                            exercises = day_obj.get('exercises', [])
+                            for idx, ex in enumerate(exercises, 1):
+                                ex_name = ex.get('name', '')
+                                # Look up or create exercise
+                                cur.execute("SELECT id FROM exercises WHERE name = %s LIMIT 1", (ex_name,))
+                                ex_row = cur.fetchone()
+                                if ex_row:
+                                    exercise_id = ex_row['id']
+                                else:
+                                    # Create new exercise if it doesn't exist
+                                    cur.execute(
+                                        """INSERT INTO exercises (name, primary_muscle, difficulty)
+                                           VALUES (%s, %s, %s)""",
+                                        (ex_name, ex.get('primary_muscle', 'chest'), difficulty)
+                                    )
+                                    exercise_id = int(cur.lastrowid)
+                                
+                                cur.execute(
+                                    """INSERT INTO workout_day_items 
+                                       (day_id, exercise_id, sets, reps, rest_seconds, position)
+                                       VALUES (%s, %s, %s, %s, %s, %s)""",
+                                    (day_id, exercise_id, ex.get('sets', 3), ex.get('reps', '6-12'), 
+                                     ex.get('rest_seconds', 90), idx)
+                                )
+                        
+                        # Save to user_saved_plans
+                        save_user_plan(
+                            clerk_user_id=clerk_user_id,
+                            plan_id=plan_id,
+                            body_type=body_type,
+                            focus_areas=[primary_focus] + secondary_focuses
+                        )
+                        print(f"[analyze_image_v2] Plan saved with ID: {plan_id} with {len(days)} days and {sum(len(d.get('exercises', [])) for d in days)} exercises")
+            except Exception as save_error:
+                print(f"[analyze_image_v2] Error saving plan: {save_error}")
+                import traceback
+                traceback.print_exc()
+
+        return {
+            "success": True,
+            "type": "image_v2",
+            "body_type": body_type,
+            "primary_focus": primary_focus,
+            "secondary_focuses": secondary_focuses,
+            "difficulty": difficulty,
+            "rationale": rationale,
+            "workout_plan": workout_plan,
         }
 
     except Exception as e:
@@ -447,7 +586,7 @@ def _get_editable_payload(saved_id: int, clerk_user_id: str):
                     """
                     SELECT uwdi.id AS item_id,
                            e.name AS exercise,
-                           e.muscle_group,
+                           e.primary_muscle,
                            uwdi.sets, uwdi.reps, uwdi.rest_seconds, uwdi.position, uwdi.notes
                     FROM user_workout_day_items uwdi
                     JOIN exercises e ON e.id = uwdi.exercise_id
@@ -560,94 +699,144 @@ def reorder_items(user_day_id: int, body: ReorderBody, user=Depends(current_user
 
 @app.post("/api/analyze-video")
 async def analyze_video(
-    exercise: Literal["squats", "pushups", "shoulder_press"] = Form(...),
+    exercise: str = Form(...),
     file: UploadFile = File(...),
+    start_time: float = Form(None),  # Optional start time in seconds
+    end_time: float = Form(None),    # Optional end time in seconds
+    rep_count: int = Form(None),     # Optional number of reps
+    user=Depends(current_user),
 ):
+    """
+    Analyze exercise form using Gemini Vision.
+    Supports any exercise type - squats, pushups, lateral raises, deadlifts, etc.
+    Extracts key frames and provides detailed feedback.
+    Can analyze specific time range and distribute frames across reps.
+    """
     try:
-        ext = Path(file.filename).suffix.lower() or ".mp4"
-        video_id = str(uuid.uuid4())
-        video_path = (UPLOADS_DIR / f"{video_id}{ext}").resolve()
+        # Read file into memory as BytesIO (never save to disk)
+        file_bytes = await file.read()
+        video_file = io.BytesIO(file_bytes)
+        print(f"[analyze_video] Loaded video into memory: {len(file_bytes)} bytes for exercise={exercise}")
+        
+        time_range_str = f" (time: {start_time or 'start'}-{end_time or 'end'}s)" if start_time or end_time else ""
+        rep_str = f" ({rep_count} reps)" if rep_count else ""
 
-        with open(video_path, "wb") as f:
-            shutil.copyfileobj(file.file, f)
-
-        # Debug: confirm saved upload info
-        try:
-            size = video_path.stat().st_size
-        except FileNotFoundError:
-            size = 0
-        print(f"[analyze_video] saved upload -> path={video_path} size={size} bytes ext={ext} cwd={Path.cwd()}")
-
-        if not video_path.exists() or size == 0:
-            raise FileNotFoundError(f"Uploaded video missing or empty at {video_path}")
-
-        if exercise == "squats":
-            analyzer = SquatAnalyzer(str(video_path))
-        elif exercise == "pushups":
-            analyzer = PushupAnalyzer(str(video_path))
-        else:
-            analyzer = ShoulderPressAnalyzer(str(video_path))
-
-        print(f"[analyze_video] starting analysis for {exercise} on {video_path}")
-        report = analyzer.analyze()
-        print(f"[analyze_video] completed analysis -> report keys: {list(report.keys())}")
-
-        annotated_src = Path(report.get("annotated_video", ""))
-        annotated_url = None
-
-        if annotated_src.exists():
-            annotated_dst = OUTPUTS_DIR / annotated_src.name
-            if annotated_src.resolve() != annotated_dst.resolve():
-                shutil.copy2(annotated_src, annotated_dst)
-            annotated_url = f"/outputs/{annotated_dst.name}"
+        # Use Gemini for universal form analysis with optional time range and rep count
+        print(f"[analyze_video] starting Gemini analysis for {exercise}{time_range_str}{rep_str}")
+        # Frame count depends on rep count (min 3, max equal to reps)
+        rep_count_int = int(rep_count) if rep_count else None
+        num_frames = max(3, min(rep_count_int, 7)) if rep_count_int else 7
+        print(f"[analyze_video] rep_count={rep_count_int}, num_frames={num_frames}")
+        analyzer = GeminiFormAnalyzer(
+            video_bytes=video_file,
+            api_key=GEMINI_API_KEY, 
+            num_frames=num_frames,  # Extract frames based on rep count
+            start_time=start_time,
+            end_time=end_time,
+            rep_count=rep_count_int
+        )
+        report = analyzer.analyze(exercise=exercise)
+        
+        print(f"[analyze_video] completed analysis")
 
         return {
             "success": True,
-            "type": "video",
-            "report": {
-                "exercise": report.get("exercise"),
-                "total_reps": report.get("total_reps"),
-                "perfect_reps": report.get("perfect_reps"),
-                "partial_reps": report.get("partial_reps"),
-                "form_score": report.get("form_score"),
-            },
-            "annotated_video_url": annotated_url,
+            "type": "gemini_analysis",
+            "exercise": exercise,
+            "feedback": report.get("feedback", "No feedback available"),
+            "raw_response": report.get("raw_response", ""),
+            "num_frames_analyzed": report.get("num_frames_analyzed", 0),
+            "detected_reps": report.get("detected_reps", None),
         }
 
     except Exception as e:
         import traceback
         traceback.print_exc()
-        tb = traceback.format_exc()
-        path = str(locals().get("video_path", ""))
-        probe = None
-        probe_error = None
-        if path:
-            try:
-                probe = _fallback_video_probe(Path(path))
-            except Exception as pe:
-                probe_error = str(pe)
-        try:
-            exists = Path(path).exists()
-            sz = Path(path).stat().st_size if exists else 0
-        except Exception:
-            exists = False
-            sz = 0
+        print(f"[analyze_video] error: {str(e)}")
         return JSONResponse(
-            status_code=200,  # return 200 so frontend can show message without hard failure
+            status_code=200,
             content={
                 "success": False,
                 "error": str(e),
-                "path": path,
-                "path_exists": exists,
-                "upload_size": sz,
                 "exercise": locals().get("exercise", None),
-                "cwd": str(Path.cwd()),
-                "details": repr(e),
-                "traceback": tb,
-                "probe": probe,
-                "probe_error": probe_error,
             },
         )
+
+
+@app.websocket("/ws/analyze-video/{video_id}")
+async def websocket_analyze_video(websocket: WebSocket, video_id: str):
+    """
+    WebSocket endpoint for real-time video analysis with live rep counting.
+    """
+    await websocket.accept()
+    print(f"[WebSocket] Client connected for video_id: {video_id}")
+    
+    # Get parameters from query string
+    exercise = websocket.query_params.get('exercise', 'squats')
+    rep_count_str = websocket.query_params.get('rep_count')
+    start_time_str = websocket.query_params.get('start_time')
+    end_time_str = websocket.query_params.get('end_time')
+    
+    # Parse optional parameters
+    rep_count = int(rep_count_str) if rep_count_str else None
+    start_time = float(start_time_str) if start_time_str else None
+    end_time = float(end_time_str) if end_time_str else None
+    
+    print(f"[WebSocket] Exercise: {exercise}, Rep count: {rep_count}, Time range: {start_time}-{end_time}")
+    
+    try:
+        # Find the uploaded video file
+        video_path = None
+        for ext in ['.mp4', '.avi', '.mov', '.webm']:
+            candidate_path = UPLOADS_DIR / f"{video_id}{ext}"
+            if candidate_path.exists():
+                video_path = candidate_path
+                print(f"[WebSocket] Found video file: {video_path}")
+                break
+        
+        if not video_path:
+            error_msg = f"Video file not found: {video_id}"
+            print(f"[WebSocket] {error_msg}")
+            await websocket.send_json({
+                "type": "error",
+                "message": error_msg
+            })
+            return
+        
+        # Initialize analyzer with streaming and user parameters
+        print(f"[WebSocket] Starting analysis for {video_path}")
+        num_frames = max(3, min(rep_count, 7)) if rep_count else 7
+        analyzer = GeminiFormAnalyzer(
+            str(video_path), 
+            api_key=GEMINI_API_KEY, 
+            num_frames=num_frames,
+            start_time=start_time,
+            end_time=end_time,
+            rep_count=rep_count
+        )
+        
+        # Get the Gemini analysis
+        print(f"[WebSocket] Getting Gemini analysis for {exercise}...")
+        report = analyzer.analyze(exercise=exercise)
+
+        # Send completion message with full analysis
+        completion_data = {
+            "type": "analysis_complete",
+            "feedback": report.get("feedback", ""),
+            "raw_response": report.get("raw_response", ""),
+            "num_frames_analyzed": report.get("num_frames_analyzed", 0),
+            "exercise": exercise
+        }
+        print(f"[WebSocket] Analysis complete: {completion_data}")
+        await websocket.send_json(completion_data)
+        
+    except Exception as e:
+        await websocket.send_json({
+            "type": "error", 
+            "message": str(e)
+        })
+    finally:
+        await websocket.close()
 
 
 @app.get("/api/my-plans/{saved_id}/export-csv")

@@ -11,8 +11,8 @@ def _get_or_create_exercise(cur, name: str, muscle_group: str | None = None) -> 
         return int(row["id"])
 
     cur.execute(
-        "INSERT INTO exercises (name, muscle_group) VALUES (%s, %s);",
-        (name, muscle_group or "custom"),
+        "INSERT INTO exercises (name, primary_muscle, difficulty) VALUES (%s, %s, %s);",
+        (name, muscle_group or "custom", 'beginner'),
     )
     return int(cur.lastrowid)
 

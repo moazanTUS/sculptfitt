@@ -1,11 +1,16 @@
 import pymysql
+import os
+from dotenv import load_dotenv
 
-# ✅ Hardcoded per your request
-DB_HOST = "127.0.0.1"
-DB_USER = "root"
-DB_PASS = ""              # <-- put password here if your MariaDB user has one
-DB_NAME = "sculpfit"
-DB_PORT = 3307
+# Load environment variables
+load_dotenv()
+
+# Database configuration from environment variables
+DB_HOST = os.getenv("DB_HOST", "127.0.0.1")
+DB_USER = os.getenv("DB_USER", "root")
+DB_PASS = os.getenv("DB_PASS", "")
+DB_NAME = os.getenv("DB_NAME", "sculpfit")
+DB_PORT = int(os.getenv("DB_PORT", "3306"))
 
 
 def get_conn():

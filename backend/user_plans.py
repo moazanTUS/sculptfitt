@@ -78,7 +78,7 @@ def get_plan_days(plan_id: int):
             for d in days:
                 cur.execute(
                     """
-                    SELECT e.name AS exercise, e.muscle_group, wdi.sets, wdi.reps, wdi.rest_seconds
+                    SELECT e.name AS exercise, e.primary_muscle, wdi.sets, wdi.reps, wdi.rest_seconds
                     FROM workout_day_items wdi
                     JOIN exercises e ON e.id = wdi.exercise_id
                     WHERE wdi.day_id = %s
