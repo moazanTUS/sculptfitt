@@ -216,13 +216,15 @@ Keep it brief, direct, and encouraging. Max 100 words."""
             # Extract text from response - handle both text and other part types
             feedback_text = None
             print(f"[GeminiFormAnalyzer] Extracting text from response...")
+            print(f"[GeminiFormAnalyzer] Response type: {type(response)}")
+            print(f"[GeminiFormAnalyzer] Response dir: {[x for x in dir(response) if not x.startswith('_')][:20]}")
             
             if hasattr(response, 'text'):
                 try:
                     feedback_text = response.text
                     print(f"[GeminiFormAnalyzer] Got text via response.text: {len(feedback_text) if feedback_text else 0} chars")
-                except ValueError as e:
-                    print(f"[GeminiFormAnalyzer] response.text raised ValueError: {e}, trying parts")
+                except (ValueError, AttributeError) as e:
+                    print(f"[GeminiFormAnalyzer] response.text failed: {e}")
                     # If .text fails, extract from parts
                     for part in candidate.content.parts:
                         if hasattr(part, 'text') and part.text:
@@ -231,8 +233,14 @@ Keep it brief, direct, and encouraging. Max 100 words."""
                             break
             
             if not feedback_text:
-                print(f"[GeminiFormAnalyzer] No text extracted, checking part types: {[type(p).__name__ for p in candidate.content.parts]}")
+                print(f"[GeminiFormAnalyzer] No text extracted from response.text, checking parts...")
+                print(f"[GeminiFormAnalyzer] Candidate type: {type(candidate)}")
+                print(f"[GeminiFormAnalyzer] Candidate.content type: {type(candidate.content) if hasattr(candidate, 'content') else 'no content'}")
+                if hasattr(candidate, 'content') and hasattr(candidate.content, 'parts'):
+                    print(f"[GeminiFormAnalyzer] Part types: {[type(p).__name__ for p in candidate.content.parts]}")
+                    print(f"[GeminiFormAnalyzer] Parts content: {[str(p)[:100] for p in candidate.content.parts]}")
                 # Fallback: iterate through parts
+
                 for part in candidate.content.parts:
                     print(f"[GeminiFormAnalyzer] Part type: {type(part).__name__}, has text attr: {hasattr(part, 'text')}")
                     if hasattr(part, 'text') and part.text:
