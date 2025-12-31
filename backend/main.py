@@ -749,7 +749,18 @@ async def analyze_video(
         )
         report = analyzer.analyze(exercise=exercise)
         
-        print(f"[analyze_video] completed analysis")
+        print(f"[analyze_video] completed analysis: {report}")
+        
+        # If analyzer returned an error, pass it through
+        if not report.get("success", False):
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "success": False,
+                    "error": report.get("error", "Unknown error during analysis"),
+                    "type": "gemini_analysis",
+                }
+            )
 
         return {
             "success": True,

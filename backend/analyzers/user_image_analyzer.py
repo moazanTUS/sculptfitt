@@ -163,15 +163,21 @@ class UserImageAnalyzer:
         else:
             raise ValueError("Must provide either image_path or image_bytes")
 
-        client = genai.Client(api_key=self.api_key) if self.api_key else genai.Client()
+        # Configure genai with API key
+        if self.api_key:
+            genai.configure(api_key=self.api_key)
+        
+        # Create model instance
+        model = genai.GenerativeModel(self.model)
+        
+        # Create image part using Blob
+        image_blob = genai.types.Blob(mime_type=mime_type, data=image_bytes)
 
-        image_part = genai.types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
-
-        # Step 1: Analyze body type and focus
-        resp = client.models.generate_content(
-            model=self.model,
-            contents=[image_part, BODYTYPE_JSON_PROMPT],
-            config={"response_mime_type": "application/json"},
+        # Step 1: Analyze body type and focus - use GenerativeModel API
+        model = genai.GenerativeModel(self.model)
+        resp = model.generate_content(
+            [image_blob, BODYTYPE_JSON_PROMPT],
+            generation_config={"response_mime_type": "application/json"},
         )
 
         text = (resp.text or "").strip()
@@ -192,10 +198,9 @@ class UserImageAnalyzer:
             self.days_per_week
         )
         
-        workout_resp = client.models.generate_content(
-            model=self.model,
-            contents=[workout_prompt],
-            config={"response_mime_type": "application/json"},
+        workout_resp = model.generate_content(
+            [workout_prompt],
+            generation_config={"response_mime_type": "application/json"},
         )
         
         workout_text = (workout_resp.text or "").strip()

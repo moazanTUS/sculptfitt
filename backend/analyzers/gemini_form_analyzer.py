@@ -166,16 +166,18 @@ If form needs work:
 
 Keep it brief, direct, and encouraging. Max 100 words."""
             
-            # Send to Gemini with images - use proper format
-            content = [prompt]
-            for i, b64 in enumerate(encoded_frames):
-                content.append({
-                    "mime_type": "image/jpeg",
-                    "data": b64,
-                })
+            # Send to Gemini with images - use google.genai API format with Blob
+            content_parts = [prompt]
+            
+            # Add each frame as a Blob
+            for i, b64_data in enumerate(encoded_frames):
+                # Decode base64 back to bytes for Blob
+                image_bytes = base64.b64decode(b64_data)
+                blob = genai.types.Blob(mime_type="image/jpeg", data=image_bytes)
+                content_parts.append(blob)
             
             print(f"[GeminiFormAnalyzer] sending {len(frames)} frames to Gemini...")
-            response = self.model.generate_content(content)
+            response = self.model.generate_content(content_parts)
             
             # Handle case where response is blocked or has no content
             if not response.candidates or not response.candidates[0].content.parts:
