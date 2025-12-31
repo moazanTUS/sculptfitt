@@ -33,12 +33,13 @@ CREATE TABLE IF NOT EXISTS workout_plans (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   description TEXT,
-  body_type ENUM('ectomorph', 'mesomorph', 'endomorph') NOT NULL,
+  body_type ENUM('ectomorph', 'mesomorph', 'endomorph'),
+  primary_focus VARCHAR(100),
   focus VARCHAR(100),
-  difficulty ENUM('beginner', 'intermediate', 'advanced') NOT NULL,
+  difficulty ENUM('beginner', 'intermediate', 'advanced'),
   days_per_week INT NOT NULL DEFAULT 3,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  KEY idx_body_focus (body_type, focus)
+  KEY idx_body_focus (body_type, primary_focus)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ============================================
