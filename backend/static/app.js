@@ -1163,7 +1163,7 @@
         form.append("rep_count", repCount);
       }
 
-      const res = await fetch(`/api/analyze-video`, { method: "POST", body: form });
+      const res = await authedFetch(`/api/analyze-video`, { method: "POST", body: form });
       const data = await readJsonOrText(res);
       if (!res.ok) throw new Error(JSON.stringify(data, null, 2));
 
