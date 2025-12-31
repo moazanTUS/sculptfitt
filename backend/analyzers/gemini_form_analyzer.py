@@ -5,7 +5,7 @@ import io
 import tempfile
 import numpy as np
 from pathlib import Path
-import google.generativeai as genai
+import google.genai as genai
 import mediapipe as mp
 
 class GeminiFormAnalyzer:
