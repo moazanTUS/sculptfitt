@@ -15,12 +15,13 @@ DB_PORT = int(os.getenv("DB_PORT", "3306"))
 
 def get_conn():
     """
-    Returns a PyMySQL connection using hardcoded settings.
+    Returns a PyMySQL connection using environment variables.
+    DB_PASS can be empty if the database has no password.
     """
     return pymysql.connect(
         host=DB_HOST,
         user=DB_USER,
-        password=DB_PASS,
+        password=DB_PASS if DB_PASS else None,
         database=DB_NAME,
         port=DB_PORT,
         cursorclass=pymysql.cursors.DictCursor,

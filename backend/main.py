@@ -78,7 +78,15 @@ app.add_middleware(
 @app.get("/health")
 async def health():
     """Health check endpoint for Railway (no auth required)"""
-    return {"status": "ok"}
+    import os
+    return {
+        "status": "ok",
+        "db_host": os.getenv("DB_HOST", "not set"),
+        "db_user": os.getenv("DB_USER", "not set"),
+        "db_name": os.getenv("DB_NAME", "not set"),
+        "db_port": os.getenv("DB_PORT", "not set"),
+        "db_pass_set": bool(os.getenv("DB_PASS")),
+    }
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 app.mount("/outputs", StaticFiles(directory=str(OUTPUTS_DIR)), name="outputs")

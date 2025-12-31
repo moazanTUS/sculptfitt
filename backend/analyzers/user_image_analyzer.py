@@ -163,21 +163,23 @@ class UserImageAnalyzer:
         else:
             raise ValueError("Must provide either image_path or image_bytes")
 
-        # Configure genai with API key
-        if self.api_key:
-            genai.configure(api_key=self.api_key)
+        # Create client with API key
+        if not self.api_key:
+            self.api_key = os.getenv("GEMINI_API_KEY")
+        if not self.api_key:
+            raise ValueError("GEMINI_API_KEY not found in environment")
         
-        # Create model instance
-        model = genai.GenerativeModel(self.model)
+        client = genai.Client(api_key=self.api_key)
         
-        # Create image part using Blob
+        # Create image part using Part with inline_data
         image_blob = genai.types.Blob(mime_type=mime_type, data=image_bytes)
+        image_part = genai.types.Part(inline_data=image_blob)
 
-        # Step 1: Analyze body type and focus - use GenerativeModel API
-        model = genai.GenerativeModel(self.model)
-        resp = model.generate_content(
-            [image_blob, BODYTYPE_JSON_PROMPT],
-            generation_config={"response_mime_type": "application/json"},
+        # Step 1: Analyze body type and focus - use Client API
+        resp = client.models.generate_content(
+            model=self.model,
+            contents=[image_part, BODYTYPE_JSON_PROMPT],
+            config={"response_mime_type": "application/json"},
         )
 
         text = (resp.text or "").strip()
@@ -198,9 +200,10 @@ class UserImageAnalyzer:
             self.days_per_week
         )
         
-        workout_resp = model.generate_content(
-            [workout_prompt],
-            generation_config={"response_mime_type": "application/json"},
+        workout_resp = client.models.generate_content(
+            model=self.model,
+            contents=[workout_prompt],
+            config={"response_mime_type": "application/json"},
         )
         
         workout_text = (workout_resp.text or "").strip()

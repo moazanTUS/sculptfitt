@@ -53,11 +53,12 @@ class GeminiFormAnalyzer:
         if not api_key:
             raise ValueError("GEMINI_API_KEY not found in environment")
         
-        genai.configure(api_key=api_key)
+        self.api_key = api_key
+        self.client = genai.Client(api_key=api_key)
         
         # List available models and pick the best one for content generation with images
         try:
-            available_models = genai.list_models()
+            available_models = self.client.models.list()
             available_names = [m.name for m in available_models]
             print(f"[GeminiFormAnalyzer] Found {len(available_names)} available models")
             
@@ -83,13 +84,13 @@ class GeminiFormAnalyzer:
                         break
             
             if not best_model:
-                best_model = 'models/gemini-2.5-flash'
+                best_model = 'gemini-2.5-flash'
             
             print(f"[GeminiFormAnalyzer] Using model: {best_model}")
-            self.model = genai.GenerativeModel(best_model)
+            self.model = best_model
         except Exception as e:
             print(f"[GeminiFormAnalyzer] Error listing models: {e}, using gemini-2.5-flash")
-            self.model = genai.GenerativeModel('models/gemini-2.5-flash')
+            self.model = 'gemini-2.5-flash'
         
         print(f"[GeminiFormAnalyzer] initialized with video: {video_path}")
     
@@ -169,36 +170,75 @@ Keep it brief, direct, and encouraging. Max 100 words."""
             # Send to Gemini with images - use google.genai API format with Blob
             content_parts = [prompt]
             
-            # Add each frame as a Blob
+            # Add each frame as a Part with inline_data
             for i, b64_data in enumerate(encoded_frames):
                 # Decode base64 back to bytes for Blob
                 image_bytes = base64.b64decode(b64_data)
+                # Create Part with inline_data (Blob)
                 blob = genai.types.Blob(mime_type="image/jpeg", data=image_bytes)
-                content_parts.append(blob)
+                part = genai.types.Part(inline_data=blob)
+                content_parts.append(part)
             
             print(f"[GeminiFormAnalyzer] sending {len(frames)} frames to Gemini...")
-            response = self.model.generate_content(content_parts)
+            print(f"[GeminiFormAnalyzer] content_parts: {len(content_parts)} parts (1 text + {len(content_parts)-1} images)")
+            
+            try:
+                response = self.client.models.generate_content(
+                    model=self.model,
+                    contents=content_parts
+                )
+            except Exception as e:
+                print(f"[GeminiFormAnalyzer] Exception calling generate_content: {e}")
+                raise
+            
+            print(f"[GeminiFormAnalyzer] Got response object")
             
             # Handle case where response is blocked or has no content
-            if not response.candidates or not response.candidates[0].content.parts:
-                print(f"[GeminiFormAnalyzer] Response blocked or empty. Finish reason: {response.candidates[0].finish_reason if response.candidates else 'no candidates'}")
+            if not response.candidates:
+                print(f"[GeminiFormAnalyzer] Response has no candidates")
                 return {
                     "success": False,
-                    "error": f"Gemini API returned no content (finish_reason: {response.candidates[0].finish_reason if response.candidates else 'unknown'}). This may be due to safety filters or unsupported content.",
+                    "error": f"Gemini API returned no candidates. This may be due to safety filters.",
+                    "type": "gemini_analysis",
+                }
+            
+            candidate = response.candidates[0]
+            print(f"[GeminiFormAnalyzer] First candidate finish_reason: {candidate.finish_reason}")
+            
+            if not candidate.content or not candidate.content.parts:
+                print(f"[GeminiFormAnalyzer] Candidate has no content/parts")
+                return {
+                    "success": False,
+                    "error": f"Gemini API returned empty response (finish_reason: {candidate.finish_reason}). This may be due to safety filters or unsupported content.",
                     "type": "gemini_analysis",
                 }
             
             # Extract text from response - handle both text and other part types
             feedback_text = None
+            print(f"[GeminiFormAnalyzer] Extracting text from response...")
+            
             if hasattr(response, 'text'):
                 try:
                     feedback_text = response.text
-                except ValueError:
+                    print(f"[GeminiFormAnalyzer] Got text via response.text: {len(feedback_text) if feedback_text else 0} chars")
+                except ValueError as e:
+                    print(f"[GeminiFormAnalyzer] response.text raised ValueError: {e}, trying parts")
                     # If .text fails, extract from parts
-                    for part in response.candidates[0].content.parts:
+                    for part in candidate.content.parts:
                         if hasattr(part, 'text') and part.text:
                             feedback_text = part.text
+                            print(f"[GeminiFormAnalyzer] Got text from part: {len(feedback_text)} chars")
                             break
+            
+            if not feedback_text:
+                print(f"[GeminiFormAnalyzer] No text extracted, checking part types: {[type(p).__name__ for p in candidate.content.parts]}")
+                # Fallback: iterate through parts
+                for part in candidate.content.parts:
+                    print(f"[GeminiFormAnalyzer] Part type: {type(part).__name__}, has text attr: {hasattr(part, 'text')}")
+                    if hasattr(part, 'text') and part.text:
+                        feedback_text = part.text
+                        print(f"[GeminiFormAnalyzer] Got text from fallback: {len(feedback_text)} chars")
+                        break
             
             if not feedback_text:
                 print(f"[GeminiFormAnalyzer] Could not extract text from response")
