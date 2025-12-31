@@ -890,6 +890,8 @@ async def export_plan_csv(
                     # It's an AI-generated plan
                     plan_name = ai_plan.get("plan_name", "Workout Plan")
                     user_plan_id = ai_plan["id"]
+                    days_per_week = ai_plan.get("days_per_week", 0)
+                    focus_areas_data = ai_plan
                 else:
                     # Check if it's a saved pre-built plan
                     cur.execute(
@@ -912,6 +914,8 @@ async def export_plan_csv(
                     
                     plan_name = saved_plan.get("plan_name", "Workout Plan")
                     user_plan_id = saved_plan.get("user_plan_id")
+                    days_per_week = saved_plan.get("days_per_week", 0)
+                    focus_areas_data = saved_plan
                     
                     if not user_plan_id:
                         return JSONResponse(status_code=400, content={
@@ -941,7 +945,7 @@ async def export_plan_csv(
                 writer.writerow([])
                 writer.writerow(["Plan Name:", plan_name])
                 writer.writerow(["Duration:", f"{days_per_week} days per week"])
-                focus_areas = ", ".join([saved_plan.get("focus1") or "", saved_plan.get("focus2") or "", saved_plan.get("focus3") or ""]).strip(", ")
+                focus_areas = ", ".join([focus_areas_data.get("focus1") or focus_areas_data.get("primary_focus") or "", focus_areas_data.get("focus2") or "", focus_areas_data.get("focus3") or ""]).strip(", ")
                 writer.writerow(["Focus Areas:", focus_areas])
                 writer.writerow(["Generated:", timestamp])
                 writer.writerow([])
