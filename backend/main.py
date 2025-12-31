@@ -956,7 +956,7 @@ async def export_plan_csv(
                     cur.execute(
                         """
                         SELECT uwdi.sets, uwdi.reps, uwdi.rest_seconds, uwdi.notes,
-                               e.name AS exercise, e.muscle_group
+                               e.name AS exercise, e.primary_muscle AS muscle_group
                         FROM user_workout_day_items uwdi
                         JOIN exercises e ON e.id = uwdi.exercise_id
                         WHERE uwdi.user_day_id = %s
