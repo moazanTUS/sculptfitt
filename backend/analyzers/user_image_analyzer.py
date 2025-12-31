@@ -207,13 +207,18 @@ class UserImageAnalyzer:
         )
         
         workout_text = (workout_resp.text or "").strip()
-        print(f"[Gemini] Workout plan response:\n{workout_text}\n")
+        print(f"[Gemini] Workout plan response length: {len(workout_text)}")
+        print(f"[Gemini] Workout plan response:\n{workout_text[:1000]}\n")
         
         try:
             workout_plan = json.loads(workout_text)
-            print(f"[Gemini] Parsed workout plan: Generated {len(workout_plan.get('days', []))} days\n")
-        except json.JSONDecodeError:
-            print(f"Warning: Could not parse workout plan, returning empty")
+            days_count = len(workout_plan.get('days', []))
+            print(f"[Gemini] Parsed workout plan: Generated {days_count} days\n")
+            if days_count == 0:
+                print(f"[WARNING] Workout plan has 0 days! Full response:\n{workout_text}")
+        except json.JSONDecodeError as e:
+            print(f"[ERROR] Could not parse workout plan JSON: {e}")
+            print(f"[ERROR] Response text:\n{workout_text}")
             workout_plan = {"days": [], "days_per_week": 4, "notes": "Error generating plan"}
 
         # Merge results

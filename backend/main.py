@@ -245,16 +245,15 @@ def get_plan_details(plan_id: int):
                         "error": f"Plan {plan_id} not found"
                     })
                 
-                # Get exercises organized by day
+                # Get exercises for pre-built plans using plan_exercises
                 cur.execute(
                     """
-                    SELECT wd.day_number as day, ex.name as exercise, ex.primary_muscle, 
-                           wdi.sets, wdi.reps, wdi.rest_seconds
-                    FROM workout_days wd
-                    LEFT JOIN workout_day_items wdi ON wd.id = wdi.day_id
-                    LEFT JOIN exercises ex ON wdi.exercise_id = ex.id
-                    WHERE wd.plan_id = %s
-                    ORDER BY wd.day_number ASC, wdi.position ASC;
+                    SELECT pe.day_number as day, ex.name as exercise, ex.primary_muscle, 
+                           pe.sets, pe.reps, pe.rest_seconds
+                    FROM plan_exercises pe
+                    LEFT JOIN exercises ex ON pe.exercise_id = ex.id
+                    WHERE pe.plan_id = %s
+                    ORDER BY pe.day_number ASC, pe.position ASC;
                     """,
                     (plan_id,)
                 )
@@ -271,7 +270,7 @@ def get_plan_details(plan_id: int):
                     if row.get("exercise"):
                         days_dict[day_num]["items"].append({
                             "exercise": row.get("exercise"),
-                            "muscle_group": row.get("muscle_group"),
+                            "muscle_group": row.get("primary_muscle"),
                             "sets": row.get("sets"),
                             "reps": row.get("reps"),
                             "rest_seconds": row.get("rest_seconds")
@@ -483,13 +482,13 @@ async def analyze_image_v2(
             try:
                 with get_conn() as conn:
                     with conn.cursor() as cur:
-                        # Insert plan
+                        # Insert plan to USER plans (not shared plans)
                         cur.execute(
-                            """INSERT INTO workout_plans (name, days_per_week, primary_focus, body_type)
+                            """INSERT INTO user_workout_plans (clerk_user_id, name, days_per_week, primary_focus)
                                VALUES (%s, %s, %s, %s)""",
-                            (plan_name, len(workout_plan.get('days', [])), primary_focus, body_type)
+                            (clerk_user_id, plan_name, len(workout_plan.get('days', [])), primary_focus)
                         )
-                        plan_id = int(cur.lastrowid)
+                        user_plan_id = int(cur.lastrowid)
                         
                         # Insert days and exercises
                         days = workout_plan.get('days', [])
@@ -498,9 +497,9 @@ async def analyze_image_v2(
                             day_focus = day_obj.get('focus', '')
                             
                             cur.execute(
-                                """INSERT INTO workout_days (plan_id, day_number, title)
+                                """INSERT INTO user_workout_days (user_plan_id, day_number, title)
                                    VALUES (%s, %s, %s)""",
-                                (plan_id, day_num, day_focus)
+                                (user_plan_id, day_num, day_focus)
                             )
                             day_id = int(cur.lastrowid)
                             
@@ -523,26 +522,20 @@ async def analyze_image_v2(
                                     exercise_id = int(cur.lastrowid)
                                 
                                 cur.execute(
-                                    """INSERT INTO workout_day_items 
-                                       (day_id, exercise_id, sets, reps, rest_seconds, position)
+                                    """INSERT INTO user_workout_day_items 
+                                       (user_day_id, exercise_id, sets, reps, rest_seconds, position)
                                        VALUES (%s, %s, %s, %s, %s, %s)""",
                                     (day_id, exercise_id, ex.get('sets', 3), ex.get('reps', '6-12'), 
                                      ex.get('rest_seconds', 90), idx)
                                 )
                         
-                        # Save to user_saved_plans
-                        save_user_plan(
-                            clerk_user_id=clerk_user_id,
-                            plan_id=plan_id,
-                            body_type=body_type,
-                            focus_areas=[primary_focus] + secondary_focuses
-                        )
-                        print(f"[analyze_image_v2] Plan saved with ID: {plan_id} with {len(days)} days and {sum(len(d.get('exercises', [])) for d in days)} exercises")
+                        print(f"[analyze_image_v2] Plan saved with ID: {user_plan_id} with {len(days)} days and {sum(len(d.get('exercises', [])) for d in days)} exercises")
             except Exception as save_error:
                 print(f"[analyze_image_v2] Error saving plan: {save_error}")
                 import traceback
                 traceback.print_exc()
 
+        # Return full analysis data regardless of save success
         return {
             "success": True,
             "type": "image_v2",

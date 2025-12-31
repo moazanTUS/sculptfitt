@@ -28,6 +28,7 @@ def save_user_plan(
 def list_user_plans(clerk_user_id: str):
     with get_conn() as conn:
         with conn.cursor() as cur:
+            # Get saved pre-built plans
             cur.execute(
                 """
                 SELECT usp.id, usp.created_at, usp.body_type, usp.focus1, usp.focus2, usp.focus3,
@@ -40,7 +41,25 @@ def list_user_plans(clerk_user_id: str):
                 """,
                 (clerk_user_id,),
             )
-            return cur.fetchall()
+            saved_plans = list(cur.fetchall())
+            
+            # Get AI-generated user plans
+            cur.execute(
+                """
+                SELECT uwp.id, uwp.created_at, NULL as body_type, uwp.primary_focus as focus1, NULL as focus2, NULL as focus3,
+                       uwp.id as user_plan_id,
+                       uwp.id AS plan_id, uwp.name AS plan_name, uwp.primary_focus, uwp.days_per_week
+                FROM user_workout_plans uwp
+                WHERE uwp.clerk_user_id = %s
+                ORDER BY uwp.created_at DESC;
+                """,
+                (clerk_user_id,),
+            )
+            user_plans = list(cur.fetchall())
+            
+            # Combine both lists
+            all_plans = saved_plans + user_plans
+            return sorted(all_plans, key=lambda x: x.get('created_at'), reverse=True)
 
 
 def get_saved_plan(saved_id: int, clerk_user_id: str):

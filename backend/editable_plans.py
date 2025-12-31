@@ -20,10 +20,26 @@ def _get_or_create_exercise(cur, name: str, muscle_group: str | None = None) -> 
 def ensure_editable_copy(saved_id: int, clerk_user_id: str) -> int:
     """
     Ensures user_saved_plans.user_plan_id exists. If not, clones from shared plan tables.
+    Also handles AI-generated plans that are already in user_workout_plans.
     Returns user_plan_id.
     """
     with get_conn() as conn:
         with conn.cursor() as cur:
+            # First check if this is an AI-generated plan (directly in user_workout_plans)
+            cur.execute(
+                """
+                SELECT id FROM user_workout_plans
+                WHERE id=%s AND clerk_user_id=%s
+                LIMIT 1;
+                """,
+                (saved_id, clerk_user_id),
+            )
+            ai_plan = cur.fetchone()
+            if ai_plan:
+                # It's already an AI-generated editable plan
+                return int(ai_plan["id"])
+            
+            # Otherwise, check user_saved_plans
             cur.execute(
                 """
                 SELECT usp.id, usp.plan_id, usp.user_plan_id,

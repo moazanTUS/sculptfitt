@@ -70,7 +70,12 @@ CREATE TABLE IF NOT EXISTS user_saved_plans (
   clerk_user_id VARCHAR(255) NOT NULL,
   plan_id INT NOT NULL,
   saved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   user_plan_id INT NULL,
+  body_type VARCHAR(100),
+  focus1 VARCHAR(100),
+  focus2 VARCHAR(100),
+  focus3 VARCHAR(100),
   KEY idx_user (clerk_user_id),
   KEY idx_plan (plan_id),
   CONSTRAINT fk_usp_plan FOREIGN KEY (plan_id) REFERENCES workout_plans(id) ON DELETE CASCADE
@@ -200,3 +205,61 @@ INSERT INTO exercises (name, primary_muscle, secondary_muscles, difficulty, equi
 ('Cable Crunches', 'core', '[]', 'beginner', 'cables', 'Kneel facing cable machine, pull rope down crunching', 'Feel abs contract'),
 ('Hanging Leg Raises', 'core', '[]', 'intermediate', 'bodyweight', 'Hang from bar, raise legs to horizontal', 'Controlled movement'),
 ('Dead Bugs', 'core', '[]', 'beginner', 'bodyweight', 'Lie back, raise arms and legs, extend opposite limbs', 'Keep lower back neutral');
+
+-- ============================================
+-- Insert Pre-Built Workout Plans
+-- ============================================
+INSERT INTO workout_plans (name, body_type, primary_focus, difficulty, days_per_week) VALUES
+('Ectomorph - Chest (intermediate)', 'ectomorph', 'chest', 'intermediate', 4),
+('Endomorph - Chest (advanced)', 'endomorph', 'chest', 'advanced', 4);
+
+-- ============================================
+-- Insert Exercises for Pre-Built Plans
+-- ============================================
+-- Plan 1: Ectomorph - Chest (ID 1), Day 1
+INSERT INTO plan_exercises (plan_id, day_number, exercise_id, sets, reps, rest_seconds, position) VALUES
+(1, 1, (SELECT id FROM exercises WHERE name = 'Barbell Bench Press' AND difficulty = 'intermediate' LIMIT 1), 3, '6-12', 90, 1),
+(1, 1, (SELECT id FROM exercises WHERE name = 'Incline Dumbbell Press' AND difficulty = 'intermediate' LIMIT 1), 3, '8-12', 75, 2),
+(1, 1, (SELECT id FROM exercises WHERE name = 'Cable Flyes' AND difficulty = 'intermediate' LIMIT 1), 3, '10-15', 60, 3);
+
+-- Plan 1: Day 2
+INSERT INTO plan_exercises (plan_id, day_number, exercise_id, sets, reps, rest_seconds, position) VALUES
+(1, 2, (SELECT id FROM exercises WHERE name = 'Dumbbell Rows' AND difficulty = 'intermediate' LIMIT 1), 3, '8-12', 90, 1),
+(1, 2, (SELECT id FROM exercises WHERE name = 'Pull-ups' AND difficulty = 'intermediate' LIMIT 1), 3, '6-10', 120, 2),
+(1, 2, (SELECT id FROM exercises WHERE name = 'Face Pulls' AND difficulty = 'beginner' LIMIT 1), 3, '12-15', 45, 3);
+
+-- Plan 1: Day 3
+INSERT INTO plan_exercises (plan_id, day_number, exercise_id, sets, reps, rest_seconds, position) VALUES
+(1, 3, (SELECT id FROM exercises WHERE name = 'Dumbbell Shoulder Press' AND difficulty = 'intermediate' LIMIT 1), 3, '8-12', 90, 1),
+(1, 3, (SELECT id FROM exercises WHERE name = 'Lateral Raises' AND difficulty = 'beginner' LIMIT 1), 3, '12-15', 60, 2),
+(1, 3, (SELECT id FROM exercises WHERE name = 'Barbell Curls' AND difficulty = 'intermediate' LIMIT 1), 3, '8-12', 75, 3);
+
+-- Plan 1: Day 4
+INSERT INTO plan_exercises (plan_id, day_number, exercise_id, sets, reps, rest_seconds, position) VALUES
+(1, 4, (SELECT id FROM exercises WHERE name = 'Barbell Squats' AND difficulty = 'intermediate' LIMIT 1), 4, '6-10', 120, 1),
+(1, 4, (SELECT id FROM exercises WHERE name = 'Leg Extensions' AND difficulty = 'beginner' LIMIT 1), 3, '12-15', 60, 2),
+(1, 4, (SELECT id FROM exercises WHERE name = 'Leg Curls' AND difficulty = 'beginner' LIMIT 1), 3, '12-15', 60, 3);
+
+-- Plan 2: Endomorph - Chest (ID 2), Day 1
+INSERT INTO plan_exercises (plan_id, day_number, exercise_id, sets, reps, rest_seconds, position) VALUES
+(2, 1, (SELECT id FROM exercises WHERE name = 'Barbell Bench Press' AND difficulty = 'advanced' LIMIT 1), 4, '3-8', 120, 1),
+(2, 1, (SELECT id FROM exercises WHERE name = 'Incline Dumbbell Press' AND difficulty = 'intermediate' LIMIT 1), 4, '6-12', 90, 2),
+(2, 1, (SELECT id FROM exercises WHERE name = 'Cable Flyes' AND difficulty = 'intermediate' LIMIT 1), 3, '10-12', 60, 3);
+
+-- Plan 2: Day 2
+INSERT INTO plan_exercises (plan_id, day_number, exercise_id, sets, reps, rest_seconds, position) VALUES
+(2, 2, (SELECT id FROM exercises WHERE name = 'Barbell Rows' AND difficulty = 'advanced' LIMIT 1), 4, '3-8', 120, 1),
+(2, 2, (SELECT id FROM exercises WHERE name = 'Pull-ups' AND difficulty = 'intermediate' LIMIT 1), 4, '6-10', 120, 2),
+(2, 2, (SELECT id FROM exercises WHERE name = 'Face Pulls' AND difficulty = 'beginner' LIMIT 1), 3, '12-15', 45, 3);
+
+-- Plan 2: Day 3
+INSERT INTO plan_exercises (plan_id, day_number, exercise_id, sets, reps, rest_seconds, position) VALUES
+(2, 3, (SELECT id FROM exercises WHERE name = 'Barbell Shoulder Press' AND difficulty = 'advanced' LIMIT 1), 4, '3-8', 120, 1),
+(2, 3, (SELECT id FROM exercises WHERE name = 'Lateral Raises' AND difficulty = 'beginner' LIMIT 1), 3, '12-15', 60, 2),
+(2, 3, (SELECT id FROM exercises WHERE name = 'Hammer Curls' AND difficulty = 'beginner' LIMIT 1), 3, '10-12', 75, 3);
+
+-- Plan 2: Day 4
+INSERT INTO plan_exercises (plan_id, day_number, exercise_id, sets, reps, rest_seconds, position) VALUES
+(2, 4, (SELECT id FROM exercises WHERE name = 'Barbell Squats' AND difficulty = 'advanced' LIMIT 1), 5, '3-8', 120, 1),
+(2, 4, (SELECT id FROM exercises WHERE name = 'Barbell Deadlifts' AND difficulty = 'advanced' LIMIT 1), 3, '3-5', 180, 2),
+(2, 4, (SELECT id FROM exercises WHERE name = 'Leg Curls' AND difficulty = 'beginner' LIMIT 1), 3, '10-12', 75, 3);
