@@ -5,8 +5,8 @@ import io
 from dataclasses import dataclass
 from typing import Dict, Optional
 
-from google import genai
-from google.genai import types
+import google.generativeai as genai
+from google.generativeai import types
 
 SUPPORTED_MIME = {"image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"}
 
