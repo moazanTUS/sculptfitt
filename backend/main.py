@@ -869,40 +869,55 @@ async def export_plan_csv(
     user=Depends(current_user),
 ):
     """
-    Export a user's saved workout plan as a branded CSV file.
+    Export a user's saved workout plan or AI-generated plan as a branded CSV file.
     Downloads a CSV with plan name, exercises, and formatting.
     """
     try:
         with get_conn() as conn:
             with conn.cursor() as cur:
-                # Get the saved plan details and its editable copy
+                # First check if it's an AI-generated plan
                 cur.execute(
                     """
-                    SELECT usp.id, usp.plan_id, usp.body_type, usp.focus1, usp.focus2, usp.focus3, usp.user_plan_id,
-                           wp.name AS plan_name, wp.days_per_week, wp.primary_focus
-                    FROM user_saved_plans usp
-                    JOIN workout_plans wp ON wp.id = usp.plan_id
-                    WHERE usp.id = %s AND usp.clerk_user_id = %s;
+                    SELECT id, name AS plan_name, days_per_week, primary_focus
+                    FROM user_workout_plans
+                    WHERE id = %s AND clerk_user_id = %s;
                     """,
                     (saved_id, user["clerk_user_id"]),
                 )
-                saved_plan = cur.fetchone()
+                ai_plan = cur.fetchone()
                 
-                if not saved_plan:
-                    return JSONResponse(status_code=404, content={
-                        "success": False,
-                        "error": "Plan not found"
-                    })
-                
-                plan_name = saved_plan.get("plan_name", "Workout Plan")
-                days_per_week = saved_plan.get("days_per_week", 0)
-                user_plan_id = saved_plan.get("user_plan_id")
-                
-                if not user_plan_id:
-                    return JSONResponse(status_code=400, content={
-                        "success": False,
-                        "error": "No editable copy found for this plan"
-                    })
+                if ai_plan:
+                    # It's an AI-generated plan
+                    plan_name = ai_plan.get("plan_name", "Workout Plan")
+                    user_plan_id = ai_plan["id"]
+                else:
+                    # Check if it's a saved pre-built plan
+                    cur.execute(
+                        """
+                        SELECT usp.id, usp.plan_id, usp.body_type, usp.focus1, usp.focus2, usp.focus3, usp.user_plan_id,
+                               wp.name AS plan_name, wp.days_per_week, wp.primary_focus
+                        FROM user_saved_plans usp
+                        JOIN workout_plans wp ON wp.id = usp.plan_id
+                        WHERE usp.id = %s AND usp.clerk_user_id = %s;
+                        """,
+                        (saved_id, user["clerk_user_id"]),
+                    )
+                    saved_plan = cur.fetchone()
+                    
+                    if not saved_plan:
+                        return JSONResponse(status_code=404, content={
+                            "success": False,
+                            "error": "Plan not found"
+                        })
+                    
+                    plan_name = saved_plan.get("plan_name", "Workout Plan")
+                    user_plan_id = saved_plan.get("user_plan_id")
+                    
+                    if not user_plan_id:
+                        return JSONResponse(status_code=400, content={
+                            "success": False,
+                            "error": "No editable copy found for this plan"
+                        })
                 
                 # Get all days from editable copy
                 cur.execute(

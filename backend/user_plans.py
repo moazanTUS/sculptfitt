@@ -114,12 +114,26 @@ def get_plan_days(plan_id: int):
 
 def delete_user_plan(saved_id: int, clerk_user_id: str) -> bool:
     """
-    Delete a saved plan (from user_saved_plans).
+    Delete a saved plan (from user_saved_plans) or AI-generated plan (from user_workout_plans).
     Also cascade-delete the editable copy (user_workout_plans) if it exists.
     Returns True if deleted, False if not found.
     """
     with get_conn() as conn:
         with conn.cursor() as cur:
+            # First check if it's an AI-generated plan
+            cur.execute(
+                """
+                DELETE FROM user_workout_plans
+                WHERE id = %s AND clerk_user_id = %s;
+                """,
+                (saved_id, clerk_user_id),
+            )
+            
+            if cur.rowcount > 0:
+                conn.commit()
+                return True
+            
+            # Otherwise try to delete from user_saved_plans
             # Get the user_plan_id (editable copy) if it exists
             cur.execute(
                 """
