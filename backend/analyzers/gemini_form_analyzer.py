@@ -6,7 +6,13 @@ import tempfile
 import numpy as np
 from pathlib import Path
 import google.genai as genai
-import mediapipe as mp
+
+try:
+    import mediapipe as mp
+    HAS_MEDIAPIPE = True
+except ImportError:
+    HAS_MEDIAPIPE = False
+    mp = None
 
 class GeminiFormAnalyzer:
     """
@@ -38,14 +44,22 @@ class GeminiFormAnalyzer:
         self.end_time = end_time      # in seconds
         self.rep_count = rep_count    # number of reps to analyze
         
-        # Initialize MediaPipe for rep detection
-        self.mp_pose = mp.solutions.pose
-        self.pose = self.mp_pose.Pose(
-            static_image_mode=False,
-            model_complexity=1,
-            enable_segmentation=False,
-            min_detection_confidence=0.5
-        )
+        # Initialize MediaPipe for rep detection (optional for Gemini-based analysis)
+        self.mp_pose = None
+        self.pose = None
+        if HAS_MEDIAPIPE and hasattr(mp, 'solutions'):
+            try:
+                self.mp_pose = mp.solutions.pose
+                self.pose = self.mp_pose.Pose(
+                    static_image_mode=False,
+                    model_complexity=1,
+                    enable_segmentation=False,
+                    min_detection_confidence=0.5
+                )
+            except Exception as e:
+                print(f"[GeminiFormAnalyzer] Warning: Could not initialize MediaPipe: {e}")
+                self.mp_pose = None
+                self.pose = None
         
         # Initialize Gemini
         if not api_key:
