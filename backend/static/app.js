@@ -55,12 +55,280 @@
           };
         }
       }
+
+      // Now that Clerk is loaded and user is authenticated, check for incomplete workouts
+      console.log("[setupAuth] Authentication complete, checking for incomplete workouts");
+      checkForIncompleteWorkout();
     } catch (e) {
       console.error("[setupAuth] Error:", e);
     }
   }
 
   setupAuth();
+
+  // Check for incomplete workout sessions
+  async function checkForIncompleteWorkout() {
+    try {
+      console.log("[checkForIncompleteWorkout] Fetching workout sessions...");
+
+      // Get Bearer token from Clerk
+      let token = null;
+      try {
+        token = await Clerk.session.getToken();
+        console.log("[checkForIncompleteWorkout] Got Clerk token");
+      } catch (e) {
+        console.log("[checkForIncompleteWorkout] Could not get Clerk token:", e.message);
+      }
+
+      const headers = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const res = await fetch("/api/workout-sessions", { headers });
+      const data = await readJsonOrText(res);
+
+      console.log("[checkForIncompleteWorkout] Response:", data);
+
+      if (!data.sessions || !Array.isArray(data.sessions)) {
+        console.log("[checkForIncompleteWorkout] No sessions data");
+        return;
+      }
+
+      console.log("[checkForIncompleteWorkout] Found sessions:", data.sessions.length);
+
+      // Find the most recent incomplete session
+      const incompleteSessions = data.sessions.filter(s => !s.completed_at);
+      console.log("[checkForIncompleteWorkout] Incomplete sessions:", incompleteSessions.length);
+
+      if (incompleteSessions.length === 0) {
+        console.log("[checkForIncompleteWorkout] No incomplete workouts");
+        return;
+      }
+
+      const latestIncomplete = incompleteSessions.sort((a, b) =>
+        new Date(b.session_date) - new Date(a.session_date)
+      )[0];
+
+      // Store it globally for resume
+      window.incompleteSessionId = latestIncomplete.id;
+      window.incompleteSessionData = latestIncomplete;
+
+      // Show resume banner with workout name
+      const banner = document.getElementById("resumeWorkoutBanner");
+      const workoutNameEl = document.getElementById("resumeWorkoutName");
+      console.log("[checkForIncompleteWorkout] Banner element:", banner);
+
+      if (banner) {
+        // Update the workout name in the banner
+        if (workoutNameEl) {
+          workoutNameEl.textContent = latestIncomplete.workout_name || "Unfinished Workout";
+        }
+        banner.style.display = "flex";
+        console.log("[checkForIncompleteWorkout] Banner shown ✅");
+      }
+
+      console.log("[checkForIncompleteWorkout] Found incomplete session:", latestIncomplete.id);
+    } catch (e) {
+      console.log("[checkForIncompleteWorkout] Error:", e.message);
+    }
+  }
+
+  // Resume incomplete workout
+  window.resumeWorkout = async function () {
+    if (!window.incompleteSessionId) {
+      alert("No incomplete workout found");
+      return;
+    }
+
+    try {
+      // Get Bearer token
+      let token = null;
+      try {
+        token = await Clerk.session.getToken();
+      } catch (e) {
+        console.log("[resumeWorkout] Could not get Clerk token:", e.message);
+      }
+
+      const headers = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      // Fetch the full session details with exercises
+      const res = await fetch(`/api/workout-sessions/${window.incompleteSessionId}`, { headers });
+      const data = await readJsonOrText(res);
+
+      console.log("[resumeWorkout] Session data:", data);
+
+      if (data.success && data.session) {
+        const session = data.session;
+        const exercises = data.exercises || [];
+
+        // Show the execution modal with the incomplete session
+        window.showWorkoutExecution(
+          session.id,
+          session.workout_name || "Resume Workout",
+          exercises
+        );
+
+        // Hide the banner
+        const banner = document.getElementById("resumeWorkoutBanner");
+        if (banner) banner.style.display = "none";
+      } else {
+        throw new Error(data.error || "Failed to load workout");
+      }
+    } catch (e) {
+      console.error("[resumeWorkout] Error:", e);
+      alert("Error loading workout: " + e.message);
+    }
+  };
+
+  // Test function to create an incomplete workout
+  window.createTestIncompleteWorkout = async function () {
+    try {
+      // Get Bearer token
+      let token = null;
+      try {
+        token = await Clerk.session.getToken();
+      } catch (e) {
+        console.log("[createTestIncompleteWorkout] Could not get Clerk token:", e.message);
+      }
+
+      const headers = {
+        "Content-Type": "application/x-www-form-urlencoded"
+      };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const res = await fetch("/api/workout-sessions", {
+        method: "POST",
+        headers,
+        body: new URLSearchParams({
+          workout_plan_id: 1,
+          workout_plan_type: "ai",
+          workout_name: "💪 Test Incomplete Workout",
+          day_number: 1
+        })
+      });
+
+      const data = await readJsonOrText(res);
+      console.log("[createTestIncompleteWorkout] Response:", data);
+
+      if (data.success) {
+        alert("Test incomplete workout created! Reload the page to see the resume banner.");
+      } else {
+        alert("Error: " + (data.error || "Unknown error"));
+      }
+    } catch (e) {
+      console.error("[createTestIncompleteWorkout] Error:", e);
+      alert("Error creating test workout: " + e.message);
+    }
+  };
+
+  // Abandon incomplete workout
+  window.abandonWorkout = async function () {
+    if (!window.incompleteSessionId) {
+      alert("No incomplete workout to abandon");
+      return;
+    }
+
+    if (!confirm("Are you sure you want to abandon this workout? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      // Get Bearer token
+      let token = null;
+      try {
+        token = await Clerk.session.getToken();
+      } catch (e) {
+        console.log("[abandonWorkout] Could not get Clerk token:", e.message);
+      }
+
+      const headers = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      // Delete the workout session
+      const res = await fetch(`/api/workout-sessions/${window.incompleteSessionId}`, {
+        method: "DELETE",
+        headers
+      });
+
+      const data = await readJsonOrText(res);
+      console.log("[abandonWorkout] Response:", data);
+
+      if (data.success || res.ok) {
+        console.log("[abandonWorkout] Workout abandoned ✅");
+
+        // Hide the banner
+        const banner = document.getElementById("resumeWorkoutBanner");
+        if (banner) banner.style.display = "none";
+
+        window.incompleteSessionId = null;
+        window.incompleteSessionData = null;
+
+        showMessageModal("✅ Workout Abandoned", "The incomplete workout has been deleted.", true);
+      } else {
+        throw new Error(data.error || "Failed to abandon workout");
+      }
+    } catch (e) {
+      console.error("[abandonWorkout] Error:", e);
+      alert("Error abandoning workout: " + e.message);
+    }
+  };
+
+  // Delete workout session from history
+  window.deleteWorkoutSession = async function (sessionId) {
+    if (!confirm("Are you sure you want to delete this workout? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      // Get Bearer token
+      let token = null;
+      try {
+        token = await Clerk.session.getToken();
+      } catch (e) {
+        console.log("[deleteWorkoutSession] Could not get Clerk token:", e.message);
+      }
+
+      const headers = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      // Delete the workout session
+      const res = await fetch(`/api/workout-sessions/${sessionId}`, {
+        method: "DELETE",
+        headers
+      });
+
+      const data = await readJsonOrText(res);
+      console.log("[deleteWorkoutSession] Response:", data);
+
+      if (data.success || res.ok) {
+        console.log("[deleteWorkoutSession] Workout deleted ✅");
+
+        // Refresh the history list
+        loadWorkoutHistory();
+
+        // Close the modal
+        const messageOverlay = document.getElementById("messageOverlay");
+        if (messageOverlay) messageOverlay.style.display = "none";
+
+        showMessageModal("✅ Workout Deleted", "The workout has been removed from your history.", true);
+      } else {
+        throw new Error(data.error || "Failed to delete workout");
+      }
+    } catch (e) {
+      console.error("[deleteWorkoutSession] Error:", e);
+      alert("Error deleting workout: " + e.message);
+    }
+  };
 
   // Page Navigation
   function setupPageNavigation() {
@@ -99,6 +367,14 @@
             refreshMyPlans();
             initExploreWorkouts();
             initCustomWorkout();
+          }
+
+          // Load history when switching to history tab
+          if (targetPage === "history") {
+            setTimeout(() => {
+              loadProgressStats();
+              loadWorkoutHistory();
+            }, 100);
           }
         });
       });
@@ -229,7 +505,10 @@
       <div class="card" style="margin-top:10px;">
         <div class="row">
           <div><b>Day ${escapeHtml(String(dayNum))}</b></div>
-          <button class="btnSmall" id="add-item-${dayId}">+ Exercise</button>
+          <div style="display:flex; gap:6px;">
+            <button class="btnSmall" id="add-item-${dayId}">+ Exercise</button>
+            <button class="btnSmall" id="start-day-${dayId}" style="background: var(--accent); color: var(--bg);">▶ Start</button>
+          </div>
         </div>
 
         <div style="display:flex; gap:8px; align-items:center; margin-top:10px;">
@@ -249,8 +528,10 @@
 
   function renderEditablePlan(savedId, plan, days) {
     editorBody.innerHTML = `
-      <div class="muted">
-        <b>${escapeHtml(plan.name)}</b> • Focus: <b>${escapeHtml(plan.primary_focus || "")}</b>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div class="muted">
+          <b>${escapeHtml(plan.name)}</b> • Focus: <b>${escapeHtml(plan.primary_focus || "")}</b>
+        </div>
       </div>
       <div id="edit-days"></div>
     `;
@@ -258,6 +539,55 @@
     const wrap = document.getElementById("edit-days");
     wrap.innerHTML = (days || []).map(dayEditorHtml).join("");
 
+    // Add start workout handlers for each day
+    (days || []).forEach((d, idx) => {
+      const dayId = d.day_id ?? d.id;
+      const dayNum = idx + 1;
+      const startBtn = document.getElementById(`start-day-${dayId}`);
+
+      if (startBtn) {
+        startBtn.onclick = async () => {
+          try {
+            // Extract type and ID from composite ID
+            let workoutType = 'ai', workoutId = parseInt(savedId);
+            if (savedId.startsWith('custom_')) {
+              workoutType = 'custom';
+              workoutId = parseInt(savedId.split('_')[1]);
+            } else if (savedId.startsWith('ai_')) {
+              workoutType = 'ai';
+              workoutId = parseInt(savedId.split('_')[1]);
+            } else if (savedId.startsWith('saved_')) {
+              workoutType = 'saved';
+              workoutId = parseInt(savedId.split('_')[1]);
+            }
+
+            const formData = new FormData();
+            formData.append("workout_plan_id", workoutId);
+            formData.append("workout_plan_type", workoutType);
+            formData.append("workout_name", plan.name);
+            formData.append("day_number", dayNum);
+
+            const res = await authedFetch("/api/workout-sessions", {
+              method: "POST",
+              body: formData
+            });
+
+            const data = await res.json();
+            if (data.success) {
+              // Open workout execution modal with day-specific name
+              const dayTitle = d.title ? `${plan.name} - ${d.title}` : `${plan.name} - Day ${dayNum}`;
+              showWorkoutExecution(data.session_id, dayTitle, data.exercises);
+              editorCard.style.display = "none";
+            } else {
+              alert("Failed to start workout: " + data.error);
+            }
+          } catch (e) {
+            console.error("Error starting workout:", e);
+            alert("Error starting workout");
+          }
+        };
+      }
+    });
     (days || []).forEach(d => {
       const dayId = d.day_id ?? d.id;
 
@@ -547,7 +877,7 @@
     const form = document.getElementById("customWorkoutForm");
     const addExerciseBtn = document.getElementById("addExerciseBtn");
     const exercisesContainer = document.getElementById("exercisesContainer");
-    
+
     if (!btn) return;
 
     let exerciseCount = 0;
@@ -613,7 +943,7 @@
       // Collect exercises
       const exercises = [];
       const exerciseRows = exercisesContainer.querySelectorAll("div[id^='exercise-']");
-      
+
       if (exerciseRows.length === 0) {
         alert("Please add at least one exercise");
         return;
@@ -653,7 +983,7 @@
         });
 
         const data = await res.json();
-        
+
         if (!res.ok || !data.success) {
           throw new Error(data.error || "Failed to create workout");
         }
@@ -662,10 +992,10 @@
         const successModal = document.getElementById("successModal");
         const successMessage = document.getElementById("successMessage");
         const successCloseBtn = document.getElementById("successCloseBtn");
-        
+
         successMessage.textContent = `"${name}" with ${exercises.length} exercise${exercises.length !== 1 ? 's' : ''} is ready to use!`;
         successModal.style.display = "flex";
-        
+
         successCloseBtn.onclick = () => {
           successModal.style.display = "none";
           overlay.style.display = "none";
@@ -674,7 +1004,7 @@
           exerciseCount = 0;
           refreshMyPlans();
         };
-        
+
         // Auto-close after 5 seconds if user doesn't click
         setTimeout(() => {
           if (successModal.style.display !== "none") {
@@ -796,7 +1126,7 @@
     });
   }
 
-  function showMessageModal(title, body) {
+  function showMessageModal(title, body, isHtml = false) {
     const overlay = document.getElementById("messageOverlay");
     const titleEl = document.getElementById("messageTitle");
     const bodyEl = document.getElementById("messageBody");
@@ -804,7 +1134,13 @@
     const closeBtn = document.getElementById("messageCloseBtn");
 
     if (titleEl) titleEl.textContent = title || "Notice";
-    if (bodyEl) bodyEl.textContent = body || "";
+    if (bodyEl) {
+      if (isHtml) {
+        bodyEl.innerHTML = body || "";
+      } else {
+        bodyEl.textContent = body || "";
+      }
+    }
 
     const cleanup = () => {
       okBtn?.removeEventListener("click", onClose);
@@ -1441,7 +1777,355 @@
     }
   });
 
+  // ===========================
+  // Workout Logging Functions
+  // ===========================
+
+  async function loadProgressStats() {
+    try {
+      const res = await api("/api/progress/stats");
+      if (res.success) {
+        document.getElementById("totalWorkouts").textContent = res.stats.total_workouts || "0";
+        document.getElementById("totalMinutes").textContent = res.stats.total_minutes || "0";
+        document.getElementById("avgRating").textContent = res.stats.average_rating ? res.stats.average_rating.toFixed(1) : "-";
+
+        // Load top exercises
+        const topExercisesEl = document.getElementById("topExercises");
+        if (res.top_exercises && res.top_exercises.length > 0) {
+          topExercisesEl.innerHTML = res.top_exercises.map((ex, i) => `
+            <div style="background: var(--panel); padding: 12px; border-radius: 6px; border-left: 3px solid var(--accent);">
+              <div style="font-weight: 500;">${escapeHtml(ex.exercise_name)}</div>
+              <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">
+                ${ex.total_times_completed} times • ${ex.personal_record_weight ? ex.personal_record_weight + ' lbs PR' : 'No weight'}
+              </div>
+            </div>
+          `).join("");
+        }
+      }
+    } catch (e) {
+      console.error("Error loading stats:", e);
+    }
+  }
+
+  async function loadWorkoutHistory() {
+    try {
+      const res = await api("/api/workout-sessions");
+      if (res.success && res.sessions) {
+        const historyEl = document.getElementById("historyList");
+        if (res.sessions.length === 0) {
+          historyEl.innerHTML = '<div class="muted" style="text-align: center; padding: 20px;">No workouts logged yet. Start tracking your progress!</div>';
+          return;
+        }
+
+        historyEl.innerHTML = res.sessions.map(session => `
+          <div style="background: var(--panel); padding: 12px; border-radius: 6px; border-left: 3px solid ${session.completed_at ? 'var(--accent)' : '#666'};">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+              <div>
+                <div style="font-weight: 500;">${escapeHtml(session.workout_name)} - Day ${session.day_number}</div>
+                <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">
+                  📅 ${new Date(session.session_date).toLocaleDateString()} 
+                  ${session.duration_minutes ? `• ⏱️ ${session.duration_minutes} min` : ''}
+                  ${session.rating ? `• ⭐ ${session.rating}/5` : ''}
+                </div>
+              </div>
+              <div style="display: flex; gap: 6px;">
+                <button class="btnSmall" onclick="viewSessionDetails(${session.id})">View</button>
+                <button class="btnSmall" style="background: rgba(255,107,157,0.2); border-color: #ff6b9d; color: #ff6b9d;" onclick="deleteWorkoutSession(${session.id})">Delete</button>
+              </div>
+            </div>
+          </div>
+        `).join("");
+      }
+    } catch (e) {
+      console.error("Error loading history:", e);
+    }
+  }
+
+  window.viewSessionDetails = async function (sessionId) {
+    try {
+      const res = await api(`/api/workout-sessions/${sessionId}`);
+      if (res.success) {
+        const session = res.session;
+        const exercises = res.exercises;
+
+        const isCompleted = session.completed_at !== null;
+        const statusIcon = isCompleted ? '✅' : '⏳';
+        const statusColor = isCompleted ? '#4ade80' : '#f59e0b';
+
+        let detailsHTML = `
+          <div style="margin-bottom: 24px;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+              <div style="font-size: 32px;">${statusIcon}</div>
+              <div>
+                <div style="font-size: 16px; font-weight: 600; margin: 0;">${escapeHtml(session.workout_name)}</div>
+                <div style="font-size: 12px; color: var(--muted); margin: 4px 0 0 0;">Day ${session.day_number}</div>
+              </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-top: 12px;">
+              <div style="background: var(--panel); padding: 8px; border-radius: 6px; text-align: center;">
+                <div style="font-size: 12px; color: var(--muted);">Date</div>
+                <div style="font-weight: 600; margin-top: 4px;">📅 ${new Date(session.session_date).toLocaleDateString()}</div>
+              </div>
+              ${session.duration_minutes ? `
+              <div style="background: var(--panel); padding: 8px; border-radius: 6px; text-align: center;">
+                <div style="font-size: 12px; color: var(--muted);">Duration</div>
+                <div style="font-weight: 600; margin-top: 4px;">⏱️ ${session.duration_minutes} min</div>
+              </div>
+              ` : ''}
+              ${session.rating ? `
+              <div style="background: var(--panel); padding: 8px; border-radius: 6px; text-align: center;">
+                <div style="font-size: 12px; color: var(--muted);">Rating</div>
+                <div style="font-weight: 600; margin-top: 4px;">⭐ ${session.rating}/5</div>
+              </div>
+              ` : ''}
+            </div>
+            
+            ${session.notes ? `
+            <div style="background: var(--panel); padding: 8px; border-radius: 6px; margin-top: 12px;">
+              <div style="font-size: 12px; color: var(--muted); margin-bottom: 4px;">📝 Notes</div>
+              <div style="font-size: 13px;">${escapeHtml(session.notes)}</div>
+            </div>
+            ` : ''}
+          </div>
+          
+          <div style="border-top: 1px solid var(--border); padding-top: 16px;">
+            <div style="font-weight: 600; margin-bottom: 12px;">💪 Exercises (${exercises.length})</div>
+            ${exercises.length === 0 ? `
+              <div style="text-align: center; color: var(--muted); padding: 20px; background: var(--panel); border-radius: 6px;">
+                No exercises logged yet
+              </div>
+            ` : exercises.map((ex, idx) => {
+          const isLogged = ex.completed_sets > 0;
+          const completedBg = isLogged ? 'rgba(74, 222, 128, 0.1)' : 'rgba(200, 200, 200, 0.1)';
+          const completedBorder = isLogged ? '#4ade80' : '#999';
+
+          return `
+              <div style="margin-bottom: 12px; padding: 12px; background: ${completedBg}; border-left: 3px solid ${completedBorder}; border-radius: 6px;">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                  <div>
+                    <div style="font-weight: 600; font-size: 14px;">${isLogged ? '✓' : '○'} ${escapeHtml(ex.exercise_name)}</div>
+                  </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px;">
+                  <div>
+                    <div style="color: var(--muted);">Planned</div>
+                    <div style="font-weight: 600; margin-top: 2px;">${ex.planned_sets}×${ex.planned_reps}</div>
+                  </div>
+                  <div>
+                    <div style="color: var(--muted);">Completed</div>
+                    <div style="font-weight: 600; margin-top: 2px; color: ${isLogged ? '#4ade80' : '#999'};">
+                      ${isLogged ? `${ex.completed_sets}×${ex.completed_reps || ''}` : '—'}
+                    </div>
+                  </div>
+                </div>
+                
+                ${ex.weight_used || ex.rpe ? `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; margin-top: 8px;">
+                  ${ex.weight_used ? `
+                  <div>
+                    <div style="color: var(--muted);">Weight</div>
+                    <div style="font-weight: 600; margin-top: 2px;">⚖️ ${ex.weight_used} lbs</div>
+                  </div>
+                  ` : ''}
+                  ${ex.rpe ? `
+                  <div>
+                    <div style="color: var(--muted);">RPE</div>
+                    <div style="font-weight: 600; margin-top: 2px;">🔥 ${ex.rpe}/10</div>
+                  </div>
+                  ` : ''}
+                </div>
+                ` : ''}
+              </div>
+              `;
+        }).join('')}
+          </div>
+        `;
+
+        showMessageModal("Workout Details", detailsHTML, true);
+
+        // Add delete button to the modal
+        const deleteBtn = document.createElement("button");
+        deleteBtn.textContent = "🗑️ Delete";
+        deleteBtn.style.cssText = "padding: 8px 16px; background: rgba(255,107,157,0.2); border: 1px solid #ff6b9d; color: #ff6b9d; border-radius: 4px; cursor: pointer; font-size: 13px; margin-top: 12px;";
+        deleteBtn.onclick = () => {
+          deleteWorkoutSession(sessionId);
+          document.getElementById("messageOverlay").style.display = "none";
+        };
+
+        const bodyEl = document.getElementById("messageBody");
+        if (bodyEl) {
+          bodyEl.appendChild(deleteBtn);
+        }
+      }
+    } catch (e) {
+      console.error("Error loading session:", e);
+      alert("Error loading session details");
+    }
+  };
+
   bootClerkUI();
+
+  // Initialize page navigation after DOM is ready
+  console.log("[INIT] Document ready state:", document.readyState);
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      console.log("[INIT] DOMContentLoaded fired, calling setupPageNavigation");
+      setupPageNavigation();
+    });
+  }
+
+  // ===========================
+  // Workout Execution
+  // ===========================
+
+  window.showWorkoutExecution = function (sessionId, workoutName, exercises) {
+    const modal = document.getElementById("workoutExecutionModal");
+    const title = document.getElementById("workoutTitle");
+    const container = document.getElementById("workoutExercisesContainer");
+    const durationInput = document.getElementById("workoutDuration");
+    const ratingSelect = document.getElementById("workoutRating");
+    const completeBtn = document.getElementById("completeWorkoutBtn");
+    const closeBtn = document.getElementById("workoutCloseBtn");
+
+    title.textContent = workoutName;
+    durationInput.value = "";
+    ratingSelect.value = "";
+
+    // Render exercises
+    container.innerHTML = exercises.map((ex, idx) => `
+      <div style="background: var(--panel); padding: 16px; border-radius: 8px; border-left: 3px solid var(--border);">
+        <div style="font-weight: 600; margin-bottom: 12px; font-size: 14px;">${idx + 1}. ${escapeHtml(ex.exercise_name)}</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; font-size: 13px;">
+          <div>
+            <label style="color: var(--muted); display: block; margin-bottom: 4px;">Sets</label>
+            <input type="number" class="completed-sets" data-ex-id="${ex.id}" min="0" max="20" placeholder="${ex.planned_sets}" value="${ex.completed_sets || ''}" style="width: 100%; padding: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 4px;">
+          </div>
+          <div>
+            <label style="color: var(--muted); display: block; margin-bottom: 4px;">Reps</label>
+            <input type="text" class="completed-reps" data-ex-id="${ex.id}" placeholder="${escapeHtml(ex.planned_reps)}" value="${ex.completed_reps || ''}" style="width: 100%; padding: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 4px;">
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13px;">
+          <div>
+            <label style="color: var(--muted); display: block; margin-bottom: 4px;">Weight (lbs)</label>
+            <input type="number" class="weight-used" data-ex-id="${ex.id}" min="0" step="0.5" placeholder="0" value="${ex.weight_used || ''}" style="width: 100%; padding: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 4px;">
+          </div>
+          <div>
+            <label style="color: var(--muted); display: block; margin-bottom: 4px;">RPE (1-10)</label>
+            <input type="number" class="rpe" data-ex-id="${ex.id}" min="1" max="10" placeholder="6" value="${ex.rpe || ''}" style="width: 100%; padding: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 4px;">
+          </div>
+        </div>
+      </div>
+    `).join("");
+
+    modal.style.display = "block";
+
+    // Close button
+    closeBtn.onclick = () => {
+      modal.style.display = "none";
+    };
+
+    // Add abandon button next to close button
+    let abandonBtn = document.getElementById("abandonWorkoutExecBtn");
+    if (!abandonBtn) {
+      abandonBtn = document.createElement("button");
+      abandonBtn.id = "abandonWorkoutExecBtn";
+      abandonBtn.style.cssText = "padding: 8px 16px; background: rgba(255,107,157,0.2); border: 1px solid #ff6b9d; color: #ff6b9d; border-radius: 4px; cursor: pointer; font-size: 13px; margin-left: 8px;";
+      abandonBtn.textContent = "🗑️ Abandon";
+      closeBtn.parentNode.appendChild(abandonBtn);
+    }
+
+    abandonBtn.onclick = async () => {
+      if (!confirm("Abandon this workout? Any unsaved data will be lost.")) return;
+
+      try {
+        let token = null;
+        try {
+          token = await Clerk.session.getToken();
+        } catch (e) {
+          console.log("[abandon] Could not get Clerk token");
+        }
+
+        const headers = {};
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
+        const res = await fetch(`/api/workout-sessions/${sessionId}`, {
+          method: "DELETE",
+          headers
+        });
+
+        const data = await readJsonOrText(res);
+        if (data.success || res.ok) {
+          modal.style.display = "none";
+          checkForIncompleteWorkout();
+          showMessageModal("✅ Workout Abandoned", "The workout has been deleted.", true);
+        }
+      } catch (e) {
+        alert("Error: " + e.message);
+      }
+    };
+
+    // Complete workout
+    completeBtn.onclick = async () => {
+      try {
+        completeBtn.disabled = true;
+        completeBtn.textContent = "Saving...";
+
+        // Log all exercises first
+        const sets = container.querySelectorAll(".completed-sets");
+        for (let setInput of sets) {
+          const exId = setInput.getAttribute("data-ex-id");
+          const repsInput = container.querySelector(`.completed-reps[data-ex-id="${exId}"]`);
+          const weightInput = container.querySelector(`.weight-used[data-ex-id="${exId}"]`);
+          const rpeInput = container.querySelector(`.rpe[data-ex-id="${exId}"]`);
+
+          const completedSets = parseInt(setInput.value) || 0;
+          if (completedSets > 0) {
+            const formData = new FormData();
+            formData.append("completed_sets", completedSets);
+            formData.append("completed_reps", repsInput.value || "");
+            formData.append("weight_used", parseFloat(weightInput.value) || null);
+            formData.append("rpe", parseInt(rpeInput.value) || null);
+
+            await authedFetch(`/api/workout-sessions/${sessionId}/exercises/${exId}/log`, {
+              method: "POST",
+              body: formData
+            });
+          }
+        }
+
+        // Complete the workout
+        const duration = parseInt(durationInput.value) || 0;
+        const rating = parseInt(ratingSelect.value) || null;
+
+        const completeForm = new FormData();
+        completeForm.append("duration_minutes", duration);
+        completeForm.append("rating", rating);
+        completeForm.append("notes", "");
+
+        const completeRes = await authedFetch(`/api/workout-sessions/${sessionId}/complete`, {
+          method: "POST",
+          body: completeForm
+        });
+
+        const completeData = await completeRes.json();
+        if (completeData.success) {
+          modal.style.display = "none";
+          alert("✅ Workout completed! Your progress has been saved.");
+          loadWorkoutHistory();
+          loadProgressStats();
+        }
+      } catch (e) {
+        console.error("Error completing workout:", e);
+        alert("Error saving workout: " + e.message);
+      } finally {
+        completeBtn.disabled = false;
+        completeBtn.textContent = "✓ Finish";
+      }
+    };
+  };
 
   // Initialize page navigation after DOM is ready
   console.log("[INIT] Document ready state:", document.readyState);

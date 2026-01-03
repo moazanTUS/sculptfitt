@@ -84,6 +84,10 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
+#resumeWorkoutBanner[style*="display: flex"] {
+  display: flex !important;
+}
+
 @media (min-width: 640px) {
   .mainNav {
     gap: 10px;

@@ -35,7 +35,25 @@
       <button class="navBtn active" data-page="analysis">📸 Body Analysis</button>
       <button class="navBtn" data-page="video">🎥 Video Analysis</button>
       <button class="navBtn" data-page="workouts">📋 Workouts</button>
+      <button class="navBtn" data-page="history">📊 History</button>
     </nav>
+
+    <!-- Resume Workout Banner -->
+    <div id="resumeWorkoutBanner"
+      style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 16px; margin: 12px; border-radius: 8px; color: white; justify-content: space-between; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); display: none; flex-direction: column; gap: 12px;">
+      <div>
+        <strong>💪 <span id="resumeWorkoutName">Unfinished Workout</span></strong>
+        <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Resume your workout?</p>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button onclick="window.resumeWorkout()"
+          style="padding: 8px 16px; background: white; color: #667eea; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px;">Resume</button>
+        <button onclick="window.abandonWorkout()"
+          style="padding: 8px 16px; background: rgba(255,107,157,0.3); color: #ff6b9d; border: 1px solid #ff6b9d; border-radius: 4px; cursor: pointer; font-size: 13px;">Abandon</button>
+        <button onclick="document.getElementById('resumeWorkoutBanner').style.display='none'"
+          style="padding: 8px 16px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;">Dismiss</button>
+      </div>
+    </div>
 
     <main class="mainContent">
       <!-- Body Analysis Page -->
@@ -241,7 +259,8 @@
               <h3 style="margin: 2px 0 0 0; font-size: 16px;">Create Custom Workout</h3>
             </div>
           </div>
-          <button class="btn" style="width: 100%; padding: 12px; font-size: 13px;" id="createCustomWorkoutBtn">+ Create New Workout</button>
+          <button class="btn" style="width: 100%; padding: 12px; font-size: 13px;" id="createCustomWorkoutBtn">+ Create
+            New Workout</button>
         </div>
 
         <!-- Explore Pre-Made Workouts -->
@@ -299,6 +318,67 @@
             <button class="btnGhost" id="closeEditorBtn">✕ Close</button>
           </div>
           <div id="editorBody" class="editorBody"></div>
+        </div>
+      </div>
+
+      <!-- History Page -->
+      <div class="page" id="history-page" data-page="history">
+        <section class="hero card" style="padding: 24px;">
+          <div class="heroCopy">
+            <p class="eyebrow">Track Your Progress</p>
+            <h1>Workout History</h1>
+            <p class="muted">
+              Log your completed workouts and watch your strength grow over time.
+            </p>
+          </div>
+        </section>
+
+        <div class="card">
+          <div class="cardHeader">
+            <div>
+              <p class="eyebrow">Your journey</p>
+              <h2>Performance Stats</h2>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px;">
+            <div style="background: var(--panel); padding: 16px; border-radius: 8px; text-align: center;">
+              <div style="font-size: 28px; font-weight: bold; color: var(--accent);" id="totalWorkouts">0</div>
+              <div style="font-size: 12px; color: var(--muted); margin-top: 8px;">Total Workouts</div>
+            </div>
+            <div style="background: var(--panel); padding: 16px; border-radius: 8px; text-align: center;">
+              <div style="font-size: 28px; font-weight: bold; color: var(--accent);" id="totalMinutes">0</div>
+              <div style="font-size: 12px; color: var(--muted); margin-top: 8px;">Total Minutes</div>
+            </div>
+            <div style="background: var(--panel); padding: 16px; border-radius: 8px; text-align: center;">
+              <div style="font-size: 28px; font-weight: bold; color: var(--accent);" id="avgRating">-</div>
+              <div style="font-size: 12px; color: var(--muted); margin-top: 8px;">Avg Rating</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="cardHeader">
+            <div>
+              <p class="eyebrow">Recent</p>
+              <h2>Workout Sessions</h2>
+            </div>
+            <button class="btnSmall" id="refreshHistoryBtn" style="align-self: flex-start;">↻ Refresh</button>
+          </div>
+          <div id="historyList" style="display: flex; flex-direction: column; gap: 12px;">
+            <div class="muted" style="text-align: center; padding: 20px;">Loading...</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="cardHeader">
+            <div>
+              <p class="eyebrow">Favorites</p>
+              <h2>Top Exercises</h2>
+            </div>
+          </div>
+          <div id="topExercises" style="display: flex; flex-direction: column; gap: 12px;">
+            <div class="muted" style="text-align: center; padding: 20px;">Loading...</div>
+          </div>
         </div>
       </div>
 
@@ -382,12 +462,14 @@
       <form id="customWorkoutForm" class="modalBody stack" style="gap: 16px;">
         <div>
           <label for="customWorkoutName" class="label">Workout Name</label>
-          <input type="text" id="customWorkoutName" placeholder="e.g., Push Day, Cardio Focus, Leg Day" required style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text);" />
+          <input type="text" id="customWorkoutName" placeholder="e.g., Push Day, Cardio Focus, Leg Day" required
+            style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text);" />
         </div>
-        
+
         <div>
           <label for="customWorkoutDesc" class="label">Description (Optional)</label>
-          <textarea id="customWorkoutDesc" placeholder="Add notes about this workout..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); min-height: 60px; resize: none;"></textarea>
+          <textarea id="customWorkoutDesc" placeholder="Add notes about this workout..."
+            style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); min-height: 60px; resize: none;"></textarea>
         </div>
 
         <div>
@@ -407,12 +489,52 @@
   </div>
 
   <!-- Success Modal -->
-  <div id="successModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
-    <div style="background: var(--bg); border: 2px solid var(--accent); border-radius: 12px; padding: 32px; text-align: center; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+  <div id="successModal"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+    <div
+      style="background: var(--bg); border: 2px solid var(--accent); border-radius: 12px; padding: 32px; text-align: center; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
       <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
       <h2 style="margin: 0 0 12px 0; color: var(--text);">Workout Created!</h2>
       <p id="successMessage" style="margin: 0 0 24px 0; color: var(--muted); font-size: 14px;"></p>
       <button id="successCloseBtn" class="btn" style="width: 100%;">Got it!</button>
+    </div>
+  </div>
+
+  <!-- Workout Execution Modal -->
+  <div id="workoutExecutionModal"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9998; overflow-y: auto;">
+    <div style="max-width: 600px; margin: 20px auto; background: var(--bg); border-radius: 12px; overflow: hidden;">
+      <div style="background: linear-gradient(135deg, var(--accent), #667eea); padding: 24px; color: white;">
+        <div style="display: flex; justify-content: space-between; align-items: start;">
+          <div>
+            <div style="font-size: 32px;">💪</div>
+            <h2 id="workoutTitle" style="margin: 12px 0 0 0; font-size: 24px;">Workout</h2>
+          </div>
+          <button id="workoutCloseBtn"
+            style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 20px; width: 32px; height: 32px; border-radius: 6px; cursor: pointer;">✕</button>
+        </div>
+      </div>
+
+      <div id="workoutExercisesContainer"
+        style="padding: 20px; display: flex; flex-direction: column; gap: 16px; max-height: 70vh; overflow-y: auto;">
+        <!-- Exercises will be rendered here -->
+      </div>
+
+      <div
+        style="padding: 20px; border-top: 1px solid var(--border); background: var(--panel); display: flex; gap: 12px;">
+        <input type="number" id="workoutDuration" placeholder="Duration (min)" min="0"
+          style="flex: 1; padding: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 6px;">
+        <select id="workoutRating"
+          style="flex: 1; padding: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 6px;">
+          <option value="">Rate workout</option>
+          <option value="1">⭐ (1/5)</option>
+          <option value="2">⭐⭐ (2/5)</option>
+          <option value="3">⭐⭐⭐ (3/5)</option>
+          <option value="4">⭐⭐⭐⭐ (4/5)</option>
+          <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
+        </select>
+        <button id="completeWorkoutBtn" class="btn" style="flex: 0 0 120px;">✓ Finish</button>
+      </div>
     </div>
   </div>
 

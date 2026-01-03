@@ -105,6 +105,10 @@ def current_user(request: Request):
 # Register custom workout routes
 custom_workouts_api.register_custom_workout_routes(app, current_user)
 
+# Register workout logging routes
+from . import workout_logging_api
+workout_logging_api.register_workout_logging_routes(app, current_user)
+
 
 # Run database migrations on startup
 @app.on_event("startup")
