@@ -38,6 +38,12 @@ from .editable_plans import (
     reorder_day_items,
 )
 
+# ✅ Custom workouts
+from . import custom_workouts_api
+
+# ✅ Database migrations
+from .migrations import run_migrations
+
 BASE_DIR = Path(__file__).resolve().parent
 OUTPUTS_DIR = BASE_DIR / "outputs"
 STATIC_DIR = BASE_DIR / "static"
@@ -94,6 +100,20 @@ app.mount("/outputs", StaticFiles(directory=str(OUTPUTS_DIR)), name="outputs")
 
 def current_user(request: Request):
     return require_clerk_user(request)
+
+
+# Register custom workout routes
+custom_workouts_api.register_custom_workout_routes(app, current_user)
+
+
+# Run database migrations on startup
+@app.on_event("startup")
+async def startup_event():
+    """Run database migrations on app startup"""
+    try:
+        run_migrations()
+    except Exception as e:
+        print(f"[STARTUP] Migration error (non-fatal): {e}")
 
 
 def _fallback_video_probe(path: Path):
@@ -559,15 +579,88 @@ def my_plans(user=Depends(current_user)):
     return {"success": True, "items": items}
 
 
-def _get_editable_payload(saved_id: int, clerk_user_id: str):
+def _get_editable_payload(saved_id: str, clerk_user_id: str):
     """
     Force correct payload shape:
       days[]: { day_id, day, title, items: [{ item_id, exercise, sets, reps, rest_seconds, ...}] }
+    Handles both custom workouts and user_workout_plans
+    
+    saved_id is composite: 'custom_123', 'ai_456', 'saved_789'
     """
-    user_plan_id = ensure_editable_copy(saved_id, clerk_user_id)
-
+    
+    # Parse the composite ID
+    if saved_id.startswith('custom_'):
+        plan_type = 'custom'
+        actual_id = int(saved_id.split('_')[1])
+    elif saved_id.startswith('ai_'):
+        plan_type = 'ai'
+        actual_id = int(saved_id.split('_')[1])
+    elif saved_id.startswith('saved_'):
+        plan_type = 'saved'
+        actual_id = int(saved_id.split('_')[1])
+    else:
+        # Fallback for backward compatibility
+        plan_type = 'ai'
+        actual_id = int(saved_id)
+    
     with get_conn() as conn:
         with conn.cursor() as cur:
+            # Handle custom workout
+            if plan_type == 'custom':
+                cur.execute(
+                    """
+                    SELECT id, name, days_per_week, name as primary_focus
+                    FROM custom_workouts
+                    WHERE id=%s AND clerk_user_id=%s
+                    LIMIT 1;
+                    """,
+                    (actual_id, clerk_user_id),
+                )
+                plan = cur.fetchone()
+                if not plan:
+                    raise ValueError("Custom workout not found")
+                
+                cur.execute(
+                    """
+                    SELECT id, day_number, title
+                    FROM custom_workout_days
+                    WHERE custom_workout_id=%s
+                    ORDER BY day_number ASC;
+                    """,
+                    (actual_id,),
+                )
+                days = cur.fetchall()
+
+                out_days = []
+                for d in days:
+                    day_id = int(d["id"])
+                    cur.execute(
+                        """
+                        SELECT cwe.id AS item_id,
+                               cwe.exercise_name AS exercise,
+                               cwe.sets, cwe.reps, cwe.rest_seconds, cwe.position, cwe.notes
+                        FROM custom_workout_exercises cwe
+                        WHERE cwe.custom_day_id=%s
+                        ORDER BY cwe.position ASC;
+                        """,
+                        (day_id,),
+                    )
+                    items = cur.fetchall()
+
+                    out_days.append(
+                        {
+                            "day_id": day_id,
+                            "day": int(d["day_number"]),
+                            "title": d.get("title") or "",
+                            "items": items,
+                        }
+                    )
+
+                return {"plan": plan, "days": out_days}
+            
+            # Otherwise, handle regular user plan (ai or saved)
+            user_plan_id = ensure_editable_copy(actual_id, clerk_user_id)
+
             cur.execute(
                 """
                 SELECT id, name, days_per_week, primary_focus
@@ -623,8 +716,8 @@ def _get_editable_payload(saved_id: int, clerk_user_id: str):
 
 
 @app.delete("/api/my-plans/{saved_id}")
-def delete_plan(saved_id: int, user=Depends(current_user)):
-    """Delete a saved plan by ID (user-owned only)."""
+def delete_plan(saved_id: str, user=Depends(current_user)):
+    """Delete a saved plan by composite ID (user-owned only)."""
     try:
         from .user_plans import delete_user_plan
         deleted = delete_user_plan(saved_id, user["clerk_user_id"])
@@ -636,7 +729,7 @@ def delete_plan(saved_id: int, user=Depends(current_user)):
 
 
 @app.get("/api/my-plans/{saved_id}/editable")
-def my_plan_editable(saved_id: int, user=Depends(current_user)):
+def my_plan_editable(saved_id: str, user=Depends(current_user)):
     try:
         data = _get_editable_payload(saved_id, user["clerk_user_id"])
         return {"success": True, **data}
@@ -645,7 +738,7 @@ def my_plan_editable(saved_id: int, user=Depends(current_user)):
 
 
 @app.get("/api/my-plans/{saved_id}")
-def my_plan_detail(saved_id: int, user=Depends(current_user)):
+def my_plan_detail(saved_id: str, user=Depends(current_user)):
     try:
         data = _get_editable_payload(saved_id, user["clerk_user_id"])
         return {"success": True, **data}
@@ -865,75 +958,104 @@ async def websocket_analyze_video(websocket: WebSocket, video_id: str):
 
 @app.get("/api/my-plans/{saved_id}/export-csv")
 async def export_plan_csv(
-    saved_id: int,
+    saved_id: str,
     user=Depends(current_user),
 ):
     """
-    Export a user's saved workout plan or AI-generated plan as a branded CSV file.
+    Export a user's saved workout plan, AI-generated plan, or custom workout as a branded CSV file.
     Downloads a CSV with plan name, exercises, and formatting.
+    
+    saved_id is composite: 'custom_123', 'ai_456', 'saved_789'
     """
     try:
+        # Parse the composite ID
+        if saved_id.startswith('custom_'):
+            plan_type = 'custom'
+            actual_id = int(saved_id.split('_')[1])
+        elif saved_id.startswith('ai_'):
+            plan_type = 'ai'
+            actual_id = int(saved_id.split('_')[1])
+        elif saved_id.startswith('saved_'):
+            plan_type = 'saved'
+            actual_id = int(saved_id.split('_')[1])
+        else:
+            # Fallback for backward compatibility
+            plan_type = 'ai'
+            actual_id = int(saved_id)
+        
         with get_conn() as conn:
             with conn.cursor() as cur:
-                # First check if it's an AI-generated plan
-                cur.execute(
-                    """
-                    SELECT id, name AS plan_name, days_per_week, primary_focus
-                    FROM user_workout_plans
-                    WHERE id = %s AND clerk_user_id = %s;
-                    """,
-                    (saved_id, user["clerk_user_id"]),
-                )
-                ai_plan = cur.fetchone()
-                
-                if ai_plan:
-                    # It's an AI-generated plan
-                    plan_name = ai_plan.get("plan_name", "Workout Plan")
-                    user_plan_id = ai_plan["id"]
-                    days_per_week = ai_plan.get("days_per_week", 0)
-                    focus_areas_data = ai_plan
-                else:
-                    # Check if it's a saved pre-built plan
+                # Handle custom workout
+                if plan_type == 'custom':
                     cur.execute(
                         """
-                        SELECT usp.id, usp.plan_id, usp.body_type, usp.focus1, usp.focus2, usp.focus3, usp.user_plan_id,
-                               wp.name AS plan_name, wp.days_per_week, wp.primary_focus
-                        FROM user_saved_plans usp
-                        JOIN workout_plans wp ON wp.id = usp.plan_id
-                        WHERE usp.id = %s AND usp.clerk_user_id = %s;
+                        SELECT id, name AS plan_name, days_per_week, difficulty
+                        FROM custom_workouts
+                        WHERE id = %s AND clerk_user_id = %s;
                         """,
-                        (saved_id, user["clerk_user_id"]),
+                        (actual_id, user["clerk_user_id"]),
                     )
-                    saved_plan = cur.fetchone()
+                    custom_plan = cur.fetchone()
                     
-                    if not saved_plan:
+                    if custom_plan:
+                        # It's a custom workout
+                        plan_name = custom_plan.get("plan_name", "Custom Workout")
+                        days_per_week = custom_plan.get("days_per_week", 1)
+                        is_custom = True
+                    else:
                         return JSONResponse(status_code=404, content={
                             "success": False,
-                            "error": "Plan not found"
+                            "error": "Custom workout not found"
                         })
+                else:
+                    # Check if it's an AI-generated plan
+                    cur.execute(
+                        """
+                        SELECT id, name AS plan_name, days_per_week, primary_focus
+                        FROM user_workout_plans
+                        WHERE id = %s AND clerk_user_id = %s;
+                        """,
+                        (actual_id, user["clerk_user_id"]),
+                    )
+                    ai_plan = cur.fetchone()
+                    is_custom = False
                     
-                    plan_name = saved_plan.get("plan_name", "Workout Plan")
-                    user_plan_id = saved_plan.get("user_plan_id")
-                    days_per_week = saved_plan.get("days_per_week", 0)
-                    focus_areas_data = saved_plan
-                    
-                    if not user_plan_id:
-                        return JSONResponse(status_code=400, content={
-                            "success": False,
-                            "error": "No editable copy found for this plan"
-                        })
-                
-                # Get all days from editable copy
-                cur.execute(
-                    """
-                    SELECT id, day_number, title
-                    FROM user_workout_days
-                    WHERE user_plan_id = %s
-                    ORDER BY day_number;
-                    """,
-                    (user_plan_id,)
-                )
-                days = cur.fetchall()
+                    if ai_plan:
+                        # It's an AI-generated plan
+                        plan_name = ai_plan.get("plan_name", "Workout Plan")
+                        user_plan_id = ai_plan["id"]
+                        days_per_week = ai_plan.get("days_per_week", 0)
+                        focus_areas_data = ai_plan
+                    else:
+                        # Check if it's a saved pre-built plan
+                        cur.execute(
+                            """
+                            SELECT usp.id, usp.plan_id, usp.body_type, usp.focus1, usp.focus2, usp.focus3, usp.user_plan_id,
+                                   wp.name AS plan_name, wp.days_per_week, wp.primary_focus
+                            FROM user_saved_plans usp
+                            JOIN workout_plans wp ON wp.id = usp.plan_id
+                            WHERE usp.id = %s AND usp.clerk_user_id = %s;
+                            """,
+                            (actual_id, user["clerk_user_id"]),
+                        )
+                        saved_plan = cur.fetchone()
+                        
+                        if not saved_plan:
+                            return JSONResponse(status_code=404, content={
+                                "success": False,
+                                "error": "Plan not found"
+                            })
+                        
+                        plan_name = saved_plan.get("plan_name", "Workout Plan")
+                        user_plan_id = saved_plan.get("user_plan_id")
+                        days_per_week = saved_plan.get("days_per_week", 0)
+                        focus_areas_data = saved_plan
+                        
+                        if not user_plan_id:
+                            return JSONResponse(status_code=400, content={
+                                "success": False,
+                                "error": "No editable copy found for this plan"
+                            })
                 
                 # Build CSV in memory
                 output = io.StringIO()
@@ -945,22 +1067,81 @@ async def export_plan_csv(
                 writer.writerow([])
                 writer.writerow(["Plan Name:", plan_name])
                 writer.writerow(["Duration:", f"{days_per_week} days per week"])
-                focus_areas = ", ".join([focus_areas_data.get("focus1") or focus_areas_data.get("primary_focus") or "", focus_areas_data.get("focus2") or "", focus_areas_data.get("focus3") or ""]).strip(", ")
-                writer.writerow(["Focus Areas:", focus_areas])
+                
+                if plan_type == 'custom':
+                    writer.writerow(["Type:", "Custom Workout"])
+                else:
+                    focus_areas = ", ".join([focus_areas_data.get("focus1") or focus_areas_data.get("primary_focus") or "", focus_areas_data.get("focus2") or "", focus_areas_data.get("focus3") or ""]).strip(", ")
+                    writer.writerow(["Focus Areas:", focus_areas])
+                
                 writer.writerow(["Generated:", timestamp])
                 writer.writerow([])
                 writer.writerow([])
                 
                 # Exercises by day
-                for day in days:
+                if plan_type == 'custom':
+                    # Custom workout
                     cur.execute(
                         """
-                        SELECT uwdi.sets, uwdi.reps, uwdi.rest_seconds, uwdi.notes,
-                               e.name AS exercise, e.primary_muscle AS muscle_group
-                        FROM user_workout_day_items uwdi
-                        JOIN exercises e ON e.id = uwdi.exercise_id
-                        WHERE uwdi.user_day_id = %s
-                        ORDER BY uwdi.position;
+                        SELECT id, day_number, title
+                        FROM custom_workout_days
+                        WHERE custom_workout_id = %s
+                        ORDER BY day_number;
+                        """,
+                        (actual_id,)
+                    )
+                    days = cur.fetchall()
+                    
+                    for day in days:
+                        cur.execute(
+                            """
+                            SELECT cwe.sets, cwe.reps, cwe.rest_seconds, cwe.notes,
+                                   cwe.exercise_name AS exercise
+                            FROM custom_workout_exercises cwe
+                            WHERE cwe.custom_day_id = %s
+                            ORDER BY cwe.position;
+                            """,
+                            (day["id"],)
+                        )
+                        items = cur.fetchall()
+                        
+                        day_title = day.get("title") or f"Day {day['day_number']}"
+                        writer.writerow([day_title])
+                        writer.writerow(["Exercise", "Sets", "Reps", "Rest (sec)", "Notes"])
+                        
+                        for item in items:
+                            writer.writerow([
+                                item.get("exercise", ""),
+                                item.get("sets", ""),
+                                item.get("reps", ""),
+                                item.get("rest_seconds", ""),
+                                item.get("notes", "") or ""
+                            ])
+                        
+                        writer.writerow([])
+                else:
+                    # Regular AI or pre-built plan
+                    cur.execute(
+                        """
+                        SELECT id, day_number, title
+                        FROM user_workout_days
+                        WHERE user_plan_id = %s
+                        ORDER BY day_number;
+                        """,
+                        (user_plan_id,)
+                    )
+                    days = cur.fetchall()
+                    
+                    for day in days:
+                        cur.execute(
+                            """
+                            SELECT uwdi.sets, uwdi.reps, uwdi.rest_seconds, uwdi.notes,
+                                   e.name AS exercise, e.primary_muscle AS muscle_group
+                            FROM user_workout_day_items uwdi
+                            JOIN exercises e ON e.id = uwdi.exercise_id
+                            WHERE uwdi.user_day_id = %s
+                            ORDER BY uwdi.position;
+
                         """,
                         (day["id"],)
                     )

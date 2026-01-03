@@ -98,6 +98,7 @@
           if (targetPage === "workouts") {
             refreshMyPlans();
             initExploreWorkouts();
+            initCustomWorkout();
           }
         });
       });
@@ -532,6 +533,172 @@
       } else {
         container.style.display = "none";
         btn.textContent = "Explore Workouts";
+      }
+    };
+  }
+
+  // Initialize custom workout creation
+  function initCustomWorkout() {
+    const btn = document.getElementById("createCustomWorkoutBtn");
+    const overlay = document.getElementById("customWorkoutOverlay");
+    const closeBtn = document.getElementById("customWorkoutCloseBtn");
+    const cancelBtn = document.getElementById("customWorkoutCancelBtn");
+    const createBtn = document.getElementById("customWorkoutCreateBtn");
+    const form = document.getElementById("customWorkoutForm");
+    const addExerciseBtn = document.getElementById("addExerciseBtn");
+    const exercisesContainer = document.getElementById("exercisesContainer");
+    
+    if (!btn) return;
+
+    let exerciseCount = 0;
+
+    function addExerciseRow() {
+      exerciseCount++;
+      const rowId = `exercise-${exerciseCount}`;
+      const row = document.createElement("div");
+      row.id = rowId;
+      row.style.cssText = "display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 8px; align-items: end; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 6px; border: 1px solid var(--border);";
+      row.innerHTML = `
+        <div>
+          <label style="font-size: 11px; color: var(--muted);">Exercise</label>
+          <input type="text" class="exercise-name" placeholder="Bench Press" required style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 12px;" />
+        </div>
+        <div>
+          <label style="font-size: 11px; color: var(--muted);">Sets</label>
+          <input type="number" class="exercise-sets" placeholder="3" value="3" min="1" max="10" required style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 12px;" />
+        </div>
+        <div>
+          <label style="font-size: 11px; color: var(--muted);">Reps</label>
+          <input type="text" class="exercise-reps" placeholder="8-12" value="8-12" required style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 12px;" />
+        </div>
+        <div>
+          <label style="font-size: 11px; color: var(--muted);">Rest (sec)</label>
+          <input type="number" class="exercise-rest" placeholder="60" value="60" min="15" max="300" required style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 12px;" />
+        </div>
+        <button type="button" class="btnSmall btnGhost" style="padding: 6px 10px;" onclick="document.getElementById('${rowId}').remove();">✕</button>
+      `;
+      exercisesContainer.appendChild(row);
+    }
+
+    btn.onclick = () => {
+      overlay.style.display = "flex";
+      form.reset();
+      exercisesContainer.innerHTML = "";
+      exerciseCount = 0;
+      addExerciseRow(); // Start with one empty exercise row
+    };
+
+    closeBtn.onclick = () => {
+      overlay.style.display = "none";
+    };
+
+    cancelBtn.onclick = () => {
+      overlay.style.display = "none";
+    };
+
+    addExerciseBtn.onclick = (e) => {
+      e.preventDefault();
+      addExerciseRow();
+    };
+
+    createBtn.onclick = async () => {
+      const name = document.getElementById("customWorkoutName").value.trim();
+      const description = document.getElementById("customWorkoutDesc").value.trim();
+
+      if (!name) {
+        alert("Please enter a workout name");
+        return;
+      }
+
+      // Collect exercises
+      const exercises = [];
+      const exerciseRows = exercisesContainer.querySelectorAll("div[id^='exercise-']");
+      
+      if (exerciseRows.length === 0) {
+        alert("Please add at least one exercise");
+        return;
+      }
+
+      exerciseRows.forEach((row, idx) => {
+        const exerciseName = row.querySelector(".exercise-name").value.trim();
+        const sets = row.querySelector(".exercise-sets").value;
+        const reps = row.querySelector(".exercise-reps").value.trim();
+        const rest = row.querySelector(".exercise-rest").value;
+
+        if (!exerciseName || !sets || !reps || !rest) {
+          throw new Error("All exercise fields are required");
+        }
+
+        exercises.push({
+          position: idx + 1,
+          exercise_name: exerciseName,
+          sets: parseInt(sets),
+          reps: reps,
+          rest_seconds: parseInt(rest)
+        });
+      });
+
+      try {
+        createBtn.disabled = true;
+        createBtn.textContent = "Creating...";
+
+        const formData = new FormData();
+        formData.append("name", name);
+        formData.append("description", description);
+        formData.append("exercises", JSON.stringify(exercises));
+
+        const res = await authedFetch("/api/custom-workouts", {
+          method: "POST",
+          body: formData
+        });
+
+        const data = await res.json();
+        
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || "Failed to create workout");
+        }
+
+        // Show success modal
+        const successModal = document.getElementById("successModal");
+        const successMessage = document.getElementById("successMessage");
+        const successCloseBtn = document.getElementById("successCloseBtn");
+        
+        successMessage.textContent = `"${name}" with ${exercises.length} exercise${exercises.length !== 1 ? 's' : ''} is ready to use!`;
+        successModal.style.display = "flex";
+        
+        successCloseBtn.onclick = () => {
+          successModal.style.display = "none";
+          overlay.style.display = "none";
+          form.reset();
+          exercisesContainer.innerHTML = "";
+          exerciseCount = 0;
+          refreshMyPlans();
+        };
+        
+        // Auto-close after 5 seconds if user doesn't click
+        setTimeout(() => {
+          if (successModal.style.display !== "none") {
+            successModal.style.display = "none";
+            overlay.style.display = "none";
+            form.reset();
+            exercisesContainer.innerHTML = "";
+            exerciseCount = 0;
+            refreshMyPlans();
+          }
+        }, 5000);
+      } catch (e) {
+        console.error("Error creating custom workout:", e);
+        alert("Failed to create workout: " + e.message);
+      } finally {
+        createBtn.disabled = false;
+        createBtn.textContent = "Create Workout";
+      }
+    };
+
+    // Close on escape
+    overlay.onclick = (e) => {
+      if (e.target === overlay) {
+        overlay.style.display = "none";
       }
     };
   }

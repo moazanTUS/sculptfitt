@@ -233,6 +233,17 @@
           </div>
         </section>
 
+        <!-- Create Custom Workout -->
+        <div class="card" style="padding: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <div>
+              <p class="eyebrow" style="margin: 0; font-size: 11px;">Build Your Own</p>
+              <h3 style="margin: 2px 0 0 0; font-size: 16px;">Create Custom Workout</h3>
+            </div>
+          </div>
+          <button class="btn" style="width: 100%; padding: 12px; font-size: 13px;" id="createCustomWorkoutBtn">+ Create New Workout</button>
+        </div>
+
         <!-- Explore Pre-Made Workouts -->
         <div class="card" style="padding: 16px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
@@ -355,6 +366,53 @@
       <div class="modalActions">
         <button class="btn" id="messageOkBtn">OK</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Create Custom Workout Modal -->
+  <div id="customWorkoutOverlay" class="modalOverlay" style="display:none;">
+    <div class="modal" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
+      <div class="modalHeader">
+        <div>
+          <p class="eyebrow">Build Your Own</p>
+          <h3 style="margin:6px 0 0; font-size: 18px;">Create Custom Workout</h3>
+        </div>
+        <button class="btnGhost btnClose" id="customWorkoutCloseBtn">✕</button>
+      </div>
+      <form id="customWorkoutForm" class="modalBody stack" style="gap: 16px;">
+        <div>
+          <label for="customWorkoutName" class="label">Workout Name</label>
+          <input type="text" id="customWorkoutName" placeholder="e.g., Push Day, Cardio Focus, Leg Day" required style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text);" />
+        </div>
+        
+        <div>
+          <label for="customWorkoutDesc" class="label">Description (Optional)</label>
+          <textarea id="customWorkoutDesc" placeholder="Add notes about this workout..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); min-height: 60px; resize: none;"></textarea>
+        </div>
+
+        <div>
+          <label class="label">Add Exercises</label>
+          <div id="exercisesContainer" style="display: flex; flex-direction: column; gap: 12px;">
+            <!-- Exercise entries will be added here -->
+          </div>
+          <button type="button" id="addExerciseBtn" class="btnSmall" style="margin-top: 8px;">+ Add Exercise</button>
+        </div>
+
+      </form>
+      <div class="modalActions">
+        <button class="btnSmall" id="customWorkoutCancelBtn">Cancel</button>
+        <button class="btn" id="customWorkoutCreateBtn">Create Workout</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success Modal -->
+  <div id="successModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+    <div style="background: var(--bg); border: 2px solid var(--accent); border-radius: 12px; padding: 32px; text-align: center; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+      <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
+      <h2 style="margin: 0 0 12px 0; color: var(--text);">Workout Created!</h2>
+      <p id="successMessage" style="margin: 0 0 24px 0; color: var(--muted); font-size: 14px;"></p>
+      <button id="successCloseBtn" class="btn" style="width: 100%;">Got it!</button>
     </div>
   </div>
 

@@ -77,15 +77,21 @@ def ensure_editable_copy(saved_id: int, clerk_user_id: str) -> int:
             )
             user_plan_id = int(cur.lastrowid)
 
-            # Clone days
+            # Clone days and exercises directly from plan_exercises
+            # Get unique days for this plan
             cur.execute(
-                "SELECT id, day_number, title FROM workout_days WHERE plan_id=%s ORDER BY day_number ASC;",
+                """
+                SELECT DISTINCT day_number FROM plan_exercises 
+                WHERE plan_id=%s 
+                ORDER BY day_number ASC;
+                """,
                 (source_plan_id,),
             )
-            days = cur.fetchall()
+            day_numbers = [row["day_number"] for row in cur.fetchall()]
 
             day_id_map: dict[int, int] = {}
-            for d in days:
+            
+            for day_num in day_numbers:
                 cur.execute(
                     """
                     INSERT INTO user_workout_days (user_plan_id, day_number, title)
@@ -93,22 +99,22 @@ def ensure_editable_copy(saved_id: int, clerk_user_id: str) -> int:
                     """,
                     (
                         user_plan_id,
-                        int(d["day_number"]),
-                        (d.get("title") or f"Day {int(d['day_number'])}"),
+                        int(day_num),
+                        f"Day {int(day_num)}",
                     ),
                 )
-                day_id_map[int(d["id"])] = int(cur.lastrowid)
+                day_id_map[int(day_num)] = int(cur.lastrowid)
 
-            # Clone items
-            for source_day_id, user_day_id in day_id_map.items():
+            # Clone items from plan_exercises
+            for day_num, user_day_id in day_id_map.items():
                 cur.execute(
                     """
                     SELECT exercise_id, sets, reps, rest_seconds, position
-                    FROM workout_day_items
-                    WHERE day_id=%s
+                    FROM plan_exercises
+                    WHERE plan_id=%s AND day_number=%s
                     ORDER BY position ASC;
                     """,
-                    (source_day_id,),
+                    (source_plan_id, day_num),
                 )
                 items = cur.fetchall()
                 for it in items:
