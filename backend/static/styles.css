@@ -226,6 +226,7 @@ body {
 }
 
 @media (min-width: 640px) {
+
   .btn,
   .btnGhost,
   .btnSmall {
@@ -477,6 +478,56 @@ body {
   }
 }
 
+/* Responsive options grid for radio buttons */
+.optionsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+@media (min-width: 480px) {
+  .optionsGrid {
+    gap: 12px;
+  }
+}
+
+.optionLabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 11px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  transition: all 0.2s ease;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.optionLabel:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(110, 255, 232, 0.3);
+}
+
+.optionLabel input[type="radio"] {
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.optionLabel span {
+  flex: 1;
+}
+
+@media (min-width: 640px) {
+  .optionLabel {
+    padding: 12px 14px;
+    font-size: 14px;
+    gap: 11px;
+  }
+}
+
 input,
 select {
   width: 100%;
@@ -492,6 +543,7 @@ select {
 }
 
 @media (min-width: 640px) {
+
   input,
   select {
     font-size: 14px;
@@ -559,6 +611,7 @@ table td {
 }
 
 @media (min-width: 768px) {
+
   .table th,
   .table td,
   table th,
@@ -855,24 +908,18 @@ p {
   }
 }
 
-  .hero {
-    grid-template-columns: 1fr;
-  }
-
-  .topbar {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}
-
 /* Modal */
 .modalOverlay {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: rgba(0, 0, 0, 0.6);
-  display: grid;
-  place-items: center;
-  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
   z-index: 10;
   backdrop-filter: blur(8px);
   animation: fadeIn 0.2s ease;
@@ -889,21 +936,24 @@ p {
 }
 
 .modal {
-  width: min(520px, 100%);
+  width: 100%;
+  max-width: 520px;
+  max-height: 80vh;
   background: linear-gradient(160deg, rgba(15, 20, 40, 0.98), rgba(10, 14, 32, 0.99));
   border: 1.5px solid var(--border);
   border-radius: 16px;
-  padding: 16px;
+  padding: 20px;
   box-shadow: 0 25px 70px rgba(0, 0, 0, 0.6), var(--glow);
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  margin: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 @media (min-width: 640px) {
   .modal {
     border-radius: 18px;
-    padding: 24px;
-    margin: 0;
+    padding: 28px;
   }
 }
 
@@ -955,14 +1005,21 @@ p {
 input[type="radio"] {
   appearance: none;
   -webkit-appearance: none;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border: 2px solid var(--accent);
   border-radius: 50%;
   cursor: pointer;
   background: transparent;
   transition: all 0.2s ease;
   flex-shrink: 0;
+}
+
+@media (min-width: 640px) {
+  input[type="radio"] {
+    width: 18px;
+    height: 18px;
+  }
 }
 
 input[type="radio"]:hover {
