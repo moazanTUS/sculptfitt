@@ -95,18 +95,30 @@ body {
 
 .navBtn {
   flex: 1;
-  min-width: 100px;
-  padding: 10px 12px;
+  min-width: 70px;
+  max-width: 100%;
+  padding: 9px 8px;
   border: none;
   background: rgba(255, 255, 255, 0.04);
   color: var(--muted);
   border-radius: 10px;
   cursor: pointer;
   font-weight: 600;
-  font-size: 12px;
+  font-size: 11px;
   transition: all 0.2s ease;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
+  line-height: 1.2;
+}
+
+@media (min-width: 480px) {
+  .navBtn {
+    font-size: 12px;
+    padding: 10px 10px;
+    min-width: 85px;
+  }
 }
 
 @media (min-width: 640px) {
@@ -115,6 +127,7 @@ body {
     padding: 12px 20px;
     font-size: 14px;
     border-radius: 12px;
+    letter-spacing: 0.5px;
   }
 }
 
