@@ -1,8 +1,4 @@
 (() => {
-  // ✅ If you don't see this change, app.js is not loading
-  const jsStatus = document.getElementById("jsStatus");
-  if (jsStatus) jsStatus.textContent = "JS loaded ✅";
-
   console.log("[app.js] loaded ✅");
 
   // Authentication check and logout setup
@@ -374,6 +370,14 @@
             setTimeout(() => {
               loadProgressStats();
               loadWorkoutHistory();
+            }, 100);
+          }
+
+          // Load video library when switching to library tab
+          if (targetPage === "library") {
+            setTimeout(() => {
+              window.loadVideoLibrary();
+              window.setupVideoLibraryModals();
             }, 100);
           }
         });
@@ -2138,4 +2142,169 @@
     console.log("[INIT] DOM already ready, calling setupPageNavigation immediately");
     setupPageNavigation();
   }
+
+  // VIDEO LIBRARY FUNCTIONS
+  window.loadVideoLibrary = async function() {
+    console.log("[VIDEO LIBRARY] Loading exercises...");
+    try {
+      const res = await fetch("/api/exercises");
+      const data = await res.json();
+      const exercises = data.exercises || [];
+
+      // Load muscle groups
+      const muscleRes = await fetch("/api/exercises/muscle-groups");
+      const muscleData = await muscleRes.json();
+      const muscleGroups = muscleData.muscle_groups || [];
+
+      // Populate muscle group filter
+      const filterContainer = document.getElementById("muscleGroupFilter");
+      filterContainer.innerHTML = '<button class="btn" data-muscle="All" onclick="window.filterByMuscleGroup(\'All\')" style="padding: 8px 16px; font-size: 13px;">All Exercises</button>';
+
+      muscleGroups.forEach(group => {
+        const btn = document.createElement("button");
+        btn.className = "btn";
+        btn.setAttribute("data-muscle", group);
+        btn.textContent = group;
+        btn.style.cssText = "padding: 8px 16px; font-size: 13px;";
+        btn.onclick = () => window.filterByMuscleGroup(group);
+        filterContainer.appendChild(btn);
+      });
+
+      // Display exercises
+      window.displayExercises(exercises);
+    } catch (e) {
+      console.error("Error loading video library:", e);
+      document.getElementById("exerciseList").innerHTML = '<div style="text-align: center; padding: 40px; color: var(--muted); grid-column: 1 / -1;">Error loading exercises. Please refresh.</div>';
+    }
+  };
+
+  window.displayExercises = function(exercises) {
+    const container = document.getElementById("exerciseList");
+    if (!exercises || exercises.length === 0) {
+      container.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--muted); grid-column: 1 / -1;">No exercises found</div>';
+      return;
+    }
+
+    container.innerHTML = exercises.map(ex => `
+      <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px; cursor: pointer; transition: all 0.2s;" 
+        onmouseover="this.style.borderColor='var(--accent)'" 
+        onmouseout="this.style.borderColor='var(--border)'" 
+        onclick="window.viewExerciseDetails(${ex.id})">
+        <div style="font-size: 28px; margin-bottom: 8px;">🏋️</div>
+        <h3 style="margin: 0 0 4px 0; color: var(--text);">${escapeHtml(ex.name)}</h3>
+        <p style="margin: 0 0 8px 0; font-size: 12px; color: var(--muted);">${escapeHtml(ex.muscle_group)}</p>
+        <p style="margin: 0 0 12px 0; font-size: 12px; color: var(--text); line-height: 1.4;">${ex.description ? escapeHtml(ex.description.substring(0, 80)) + '...' : 'No description'}</p>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 12px; color: var(--accent);">${ex.video_count || 0} videos</span>
+          <span style="font-size: 12px; background: var(--bg); padding: 4px 8px; border-radius: 4px; color: var(--muted);">${ex.difficulty}</span>
+        </div>
+      </div>
+    `).join("");
+  };
+
+  window.viewExerciseDetails = async function(exerciseId) {
+    console.log("[VIDEO LIBRARY] Viewing exercise:", exerciseId);
+    try {
+      const res = await fetch(`/api/exercises/${exerciseId}`);
+      const exercise = await res.json();
+
+      const modal = document.getElementById("exerciseVideoModal");
+      document.getElementById("videoExerciseName").textContent = exercise.name;
+      document.getElementById("videoExerciseMuscle").textContent = exercise.muscle_group || "General";
+      document.getElementById("videoExerciseDescription").textContent = exercise.description || "No description available";
+
+      const videosContainer = document.getElementById("videosContainer");
+      if (!exercise.videos || exercise.videos.length === 0) {
+        videosContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--muted);">No videos available for this exercise</div>';
+      } else {
+        videosContainer.innerHTML = exercise.videos.map((video, idx) => `
+          <div style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
+            <div style="position: relative; background: black; aspect-ratio: 16/9; overflow: hidden;">
+              <iframe width="100%" height="100%" src="${escapeHtml(video.video_url)}" 
+                frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowfullscreen style="border: none;"></iframe>
+            </div>
+            <div style="padding: 16px;">
+              <h3 style="margin: 0 0 8px 0; color: var(--text);">${escapeHtml(video.title)}</h3>
+              <p style="margin: 0 0 12px 0; font-size: 13px; color: var(--muted); line-height: 1.5;">${escapeHtml(video.description || '')}</p>
+
+              <div style="background: var(--bg); padding: 12px; border-radius: 6px; margin-bottom: 12px;">
+                <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: bold; color: var(--accent);">💡 Form Tips:</p>
+                <p style="margin: 0; font-size: 12px; color: var(--text); line-height: 1.5; white-space: pre-wrap;">${escapeHtml(video.form_tips || 'No tips available')}</p>
+              </div>
+
+              <div style="background: var(--bg); padding: 12px; border-radius: 6px;">
+                <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: bold; color: #ff6b9d;">❌ Common Mistakes:</p>
+                <p style="margin: 0; font-size: 12px; color: var(--text); line-height: 1.5; white-space: pre-wrap;">${escapeHtml(video.common_mistakes || 'None listed')}</p>
+              </div>
+
+              <div style="display: flex; gap: 8px; margin-top: 12px; font-size: 11px; color: var(--muted);">
+                <span>⏱️ ${video.duration_seconds ? Math.round(video.duration_seconds / 60) + ' min' : 'N/A'}</span>
+                <span>👁️ ${video.views || 0} views</span>
+                <span>📊 ${video.difficulty_level}</span>
+              </div>
+            </div>
+          </div>
+        `).join("");
+      }
+
+      modal.style.display = "block";
+    } catch (e) {
+      console.error("Error fetching exercise details:", e);
+      alert("Error loading exercise details: " + e.message);
+    }
+  };
+
+  window.filterByMuscleGroup = async function(muscleGroup) {
+    console.log("[VIDEO LIBRARY] Filtering by muscle group:", muscleGroup);
+    try {
+      let res;
+      if (muscleGroup === "All") {
+        res = await fetch("/api/exercises");
+      } else {
+        res = await fetch(`/api/exercises/by-muscle-group/${encodeURIComponent(muscleGroup)}`);
+      }
+      const data = await res.json();
+      const exercises = data.exercises || [];
+      window.displayExercises(exercises);
+    } catch (e) {
+      console.error("Error filtering exercises:", e);
+      alert("Error filtering exercises: " + e.message);
+    }
+  };
+
+  window.searchExercises = async function() {
+    const query = document.getElementById("exerciseSearch").value.trim();
+    if (query.length < 2) {
+      alert("Please enter at least 2 characters to search");
+      return;
+    }
+
+    console.log("[VIDEO LIBRARY] Searching for:", query);
+    try {
+      const res = await fetch(`/api/exercises/videos/search?q=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      const exercises = data.exercises || [];
+      window.displayExercises(exercises);
+    } catch (e) {
+      console.error("Error searching exercises:", e);
+      alert("Error searching exercises: " + e.message);
+    }
+  };
+
+  // Setup modal close handlers for video library
+  window.setupVideoLibraryModals = function() {
+    const videoModal = document.getElementById("exerciseVideoModal");
+    const closeBtn = document.getElementById("videoModalCloseBtn");
+    if (closeBtn) {
+      closeBtn.onclick = () => { videoModal.style.display = "none"; };
+    }
+    if (videoModal) {
+      videoModal.onclick = (e) => {
+        if (e.target === videoModal) videoModal.style.display = "none";
+      };
+    }
+  };
+
+  // ADMIN PANEL FUNCTIONS
 })();

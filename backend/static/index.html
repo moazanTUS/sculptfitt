@@ -34,8 +34,9 @@
     <nav class="mainNav">
       <button class="navBtn active" data-page="analysis">📸 Body Analysis</button>
       <button class="navBtn" data-page="video">🎥 Video Analysis</button>
+      <button class="navBtn" data-page="library">🎓 Exercise Guide</button>
       <button class="navBtn" data-page="workouts">📋 Workouts</button>
-      <button class="navBtn" data-page="history">📊 History</button>
+      <button class="navBtn" data-page="history">🏆 Progress</button>
     </nav>
 
     <!-- Resume Workout Banner -->
@@ -66,13 +67,7 @@
               Upload a photo. Get instant AI analysis, body type detection, and personalized workout plans optimized for
               your physique.
             </p>
-            <div class="statusRow">
-              <div class="pill">
-                <span class="pulse"></span>
-                <span id="jsStatus" class="pillValue">Loaded</span>
-              </div>
-              <div id="authError" class="pill pillWarn" style="display:none;"></div>
-            </div>
+            <div id="authError" class="pill pillWarn" style="display:none;"></div>
           </div>
         </section>
 
@@ -321,6 +316,51 @@
         </div>
       </div>
 
+      <!-- Video Library Page -->
+      <div class="page" id="library-page" data-page="library">
+        <section class="hero card" style="padding: 24px;">
+          <div class="heroCopy">
+            <p class="eyebrow">Learn Proper Form</p>
+            <h1>Exercise Video Library</h1>
+            <p class="muted">
+              Browse exercise videos, form tips, and common mistakes. Master proper technique for all exercises.
+            </p>
+          </div>
+        </section>
+
+        <div class="card">
+          <div class="cardHeader">
+            <p class="eyebrow">Find exercises</p>
+            <h2>Browse by Muscle Group</h2>
+          </div>
+          <div id="muscleGroupFilter" style="display: flex; flex-wrap: wrap; gap: 8px;">
+            <button class="btn" data-muscle="All" onclick="window.filterByMuscleGroup('All')" style="padding: 8px 16px; font-size: 13px;">All Exercises</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="cardHeader">
+            <p class="eyebrow">Search</p>
+            <h2>Find Exercise</h2>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="exerciseSearch" placeholder="Search exercises..." 
+              style="flex: 1; padding: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 6px;">
+            <button class="btn" onclick="window.searchExercises()" style="padding: 10px 20px; font-size: 13px;">Search</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="cardHeader">
+            <p class="eyebrow">Available</p>
+            <h2>Exercises</h2>
+          </div>
+          <div id="exerciseList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+            <div style="text-align: center; padding: 40px; color: var(--muted); grid-column: 1 / -1;">Loading exercises...</div>
+          </div>
+        </div>
+      </div>
+
       <!-- History Page -->
       <div class="page" id="history-page" data-page="history">
         <section class="hero card" style="padding: 24px;">
@@ -497,6 +537,30 @@
       <h2 style="margin: 0 0 12px 0; color: var(--text);">Workout Created!</h2>
       <p id="successMessage" style="margin: 0 0 24px 0; color: var(--muted); font-size: 14px;"></p>
       <button id="successCloseBtn" class="btn" style="width: 100%;">Got it!</button>
+    </div>
+  </div>
+
+  <!-- Exercise Video Modal -->
+  <div id="exerciseVideoModal"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 9998; overflow-y: auto;">
+    <div style="max-width: 900px; margin: 20px auto; background: var(--bg); border-radius: 12px; overflow: hidden;">
+      <div style="background: linear-gradient(135deg, var(--accent), #667eea); padding: 24px; color: white; display: flex; justify-content: space-between; align-items: start;">
+        <div>
+          <div style="font-size: 28px; margin-bottom: 8px;" id="videoExerciseEmoji">🏋️</div>
+          <h2 id="videoExerciseName" style="margin: 0; font-size: 24px;">Exercise Name</h2>
+          <p id="videoExerciseMuscle" style="margin: 6px 0 0 0; opacity: 0.9; font-size: 14px;">Muscle Group</p>
+        </div>
+        <button id="videoModalCloseBtn"
+          style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 20px; width: 36px; height: 36px; border-radius: 6px; cursor: pointer;">✕</button>
+      </div>
+
+      <div style="padding: 24px;">
+        <div id="videoExerciseDescription" style="background: var(--panel); padding: 16px; border-radius: 8px; margin-bottom: 24px; color: var(--text); line-height: 1.6;"></div>
+
+        <div id="videosContainer" style="display: flex; flex-direction: column; gap: 24px;">
+          <!-- Videos will be loaded here -->
+        </div>
+      </div>
     </div>
   </div>
 

@@ -726,27 +726,9 @@ table td {
   border-color: rgba(255, 123, 157, 0.2);
 }
 
-.pulse {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 0 8px rgba(110, 255, 232, 0.15);
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 6px rgba(110, 255, 232, 0.15);
-  }
-
-  50% {
-    box-shadow: 0 0 0 12px rgba(110, 255, 232, 0.08);
-  }
-
-  100% {
-    box-shadow: 0 0 0 6px rgba(110, 255, 232, 0.15);
-  }
+.pillValue {
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .editorBody {

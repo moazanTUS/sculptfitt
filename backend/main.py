@@ -41,6 +41,10 @@ from .editable_plans import (
 # ✅ Custom workouts
 from . import custom_workouts_api
 
+# ✅ Video library
+from . import video_library_api
+from . import video_admin_api
+
 # ✅ Database migrations
 from .migrations import run_migrations
 
@@ -104,6 +108,12 @@ def current_user(request: Request):
 
 # Register custom workout routes
 custom_workouts_api.register_custom_workout_routes(app, current_user)
+
+# Register video library routes
+video_library_api.register_video_library_routes(app)
+
+# Register video admin routes
+video_admin_api.register_video_admin_routes(app)
 
 # Register workout logging routes
 from . import workout_logging_api
