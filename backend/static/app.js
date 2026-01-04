@@ -1213,22 +1213,96 @@
       form.append("difficulty", difficulty);
       form.append("daysPerWeek", daysPerWeek);
 
-      imageResult.textContent = "🔄 Analyzing your physique with AI...";
+      // Show progress with styled HTML
+      imageResult.innerHTML = `
+        <div style="text-align: center; padding: 24px;">
+          <div style="font-size: 48px; margin-bottom: 16px; animation: spin 2s linear infinite;">⚡</div>
+          <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Analyzing Your Physique</div>
+          <div style="font-size: 13px; color: var(--muted); margin-bottom: 20px;">This may take a few moments</div>
+          <div style="margin-top: 20px;">
+            <div id="progressStep1" style="font-size: 14px; margin: 8px 0; color: var(--muted);">
+              <span style="display: inline-block; width: 20px;">⏳</span> Detecting pose...
+            </div>
+            <div id="progressStep2" style="font-size: 14px; margin: 8px 0; color: var(--muted);">
+              <span style="display: inline-block; width: 20px;">⟳</span> Analyzing muscles...
+            </div>
+            <div id="progressStep3" style="font-size: 14px; margin: 8px 0; color: var(--muted);">
+              <span style="display: inline-block; width: 20px;">⊙</span> Generating plan...
+            </div>
+          </div>
+          <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 20px; overflow: hidden;">
+            <div id="progressBar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #667eea, #764ba2); border-radius: 2px; transition: width 0.3s ease;"></div>
+          </div>
+        </div>
+        <style>
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        </style>
+      `;
+
+      // Simulate progress updates
+      let progressStep = 0;
+      let progressPercent = 0;
+      const progressInterval = setInterval(() => {
+        progressPercent = Math.min(progressPercent + 15, 90);
+        document.getElementById("progressBar").style.width = progressPercent + "%";
+
+        progressStep++;
+        if (progressStep === 1) {
+          document.getElementById("progressStep1").innerHTML = '<span style="display: inline-block; width: 20px;">✓</span> <span style="color: var(--accent);">Pose detected</span>';
+          document.getElementById("progressStep1").style.color = "var(--accent)";
+        } else if (progressStep === 2) {
+          document.getElementById("progressStep2").innerHTML = '<span style="display: inline-block; width: 20px;">✓</span> <span style="color: var(--accent);">Muscle analysis complete</span>';
+          document.getElementById("progressStep2").style.color = "var(--accent)";
+        }
+      }, 2000);
 
       const res = await authedFetch(`/api/analyze-image-v2`, { method: "POST", body: form });
+      clearInterval(progressInterval);
+
       const data = await readJsonOrText(res);
       if (!res.ok) throw new Error(JSON.stringify(data, null, 2));
 
-      // Display results summary
-      let resultText = `✅ Analysis Complete!\n`;
-      resultText += `Body Type: ${data.body_type || 'Unknown'}\n`;
-      resultText += `Primary Focus: ${data.primary_focus || 'Chest'}\n`;
-      resultText += `Secondary Focus: ${(data.secondary_focuses || []).join(', ')}\n`;
-      resultText += `Difficulty: ${data.difficulty}\n`;
-      resultText += `Duration: 8 weeks, 4 days/week\n`;
-      resultText += `\nRationale:\n${data.rationale || 'N/A'}`;
+      // Replace progress with results (no scrolling)
+      imageResult.style.maxHeight = "none";
+      imageResult.style.overflow = "visible";
+      imageResult.style.minHeight = "auto";
+      imageResult.innerHTML = `
+        <div style="text-align: center; padding: 16px 12px;">
+          <div style="text-align: center; margin-bottom: 12px;">
+            <div style="font-size: 32px; margin-bottom: 6px;">✅</div>
+            <h2 style="margin: 0; font-size: 18px; color: var(--accent);">Analysis Complete!</h2>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div style="padding: 12px; background: rgba(102, 126, 234, 0.1); border-radius: 6px; border-left: 3px solid #667eea;">
+              <div style="font-size: 11px; color: var(--muted); margin-bottom: 3px;">BODY TYPE</div>
+              <div style="font-size: 15px; font-weight: 600;">${data.body_type || 'Unknown'}</div>
+            </div>
+            <div style="padding: 12px; background: rgba(102, 126, 234, 0.1); border-radius: 6px; border-left: 3px solid #667eea;">
+              <div style="font-size: 11px; color: var(--muted); margin-bottom: 3px;">PRIMARY FOCUS</div>
+              <div style="font-size: 15px; font-weight: 600;">${data.primary_focus || 'Chest'}</div>
+            </div>
+            <div style="padding: 12px; background: rgba(102, 126, 234, 0.1); border-radius: 6px; border-left: 3px solid #667eea;">
+              <div style="font-size: 11px; color: var(--muted); margin-bottom: 3px;">SECONDARY</div>
+              <div style="font-size: 13px; font-weight: 600;">${(data.secondary_focuses || []).join(', ') || 'N/A'}</div>
+            </div>
+            <div style="padding: 12px; background: rgba(102, 126, 234, 0.1); border-radius: 6px; border-left: 3px solid #667eea;">
+              <div style="font-size: 11px; color: var(--muted); margin-bottom: 3px;">PROGRAM</div>
+              <div style="font-size: 15px; font-weight: 600;">8 weeks, ${data.difficulty}</div>
+            </div>
+          </div>
+          <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; font-size: 13px; line-height: 1.5; color: var(--muted);">
+            <strong style="color: var(--text);">Why this plan?</strong> ${data.rationale || 'Tailored to your physique and goals.'}
+          </div>
+        </div>
+      `;
 
-      imageResult.textContent = resultText;
+      // Auto-scroll to results
+      setTimeout(() => {
+        window.scrollTo({ top: imageResult.offsetTop - 100, behavior: 'smooth' });
+      }, 100);
 
       // Display workout plan
       if (data.workout_plan) {
@@ -1628,23 +1702,24 @@
       return;
     }
 
-    // Show loading state
-    const existingContainer = document.querySelector('[data-analysis-results]');
-    if (existingContainer) {
-      existingContainer.remove();
-    }
-
-    const loadingContainer = document.createElement("div");
-    loadingContainer.setAttribute('data-analysis-results', 'true');
-    loadingContainer.style.marginTop = "20px";
-    loadingContainer.innerHTML = `
+    // Show loading state - simple spinner in videoResult element
+    videoResult.style.display = "block";
+    videoResult.style.maxHeight = "none";
+    videoResult.style.overflow = "visible";
+    videoResult.style.minHeight = "auto";
+    videoResult.innerHTML = `
       <div style="background: linear-gradient(135deg, rgba(110, 255, 232, 0.1) 0%, rgba(110, 255, 232, 0.05) 100%); border: 1px solid rgba(110, 255, 232, 0.3); border-radius: 12px; padding: 24px; text-align: center;">
-        <div style="display: inline-block; width: 40px; height: 40px; border: 3px solid var(--muted); border-top-color: #6effe8; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
-        <p style="color: #f0f4ff; margin: 16px 0 0 0; font-size: 14px;">Analyzing your video...</p>
+        <div style="font-size: 48px; margin-bottom: 12px; animation: spin 2s linear infinite;">⚡</div>
+        <p style="color: #f0f4ff; margin: 0; font-size: 14px; font-weight: 600;">Analyzing your video...</p>
+        <p style="color: var(--muted); margin: 4px 0 0 0; font-size: 12px;">This may take a while</p>
       </div>
+      <style>
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      </style>
     `;
-    videoResult.parentNode.insertBefore(loadingContainer, videoResult.nextSibling);
-    videoResult.textContent = "";
 
     try {
       const form = new FormData();
@@ -1686,7 +1761,7 @@
       if (data.video_id && videoPreview && videoPreview.src) {
         console.log("Starting live analysis with video_id:", data.video_id);
         // Update loading message
-        loadingContainer.innerHTML = `
+        videoResult.innerHTML = `
           <div style="background: linear-gradient(135deg, rgba(110, 255, 232, 0.1) 0%, rgba(110, 255, 232, 0.05) 100%); border: 1px solid rgba(110, 255, 232, 0.3); border-radius: 12px; padding: 24px; text-align: center;">
             <p style="color: #6effe8; margin: 0 0 16px 0; font-size: 16px; font-weight: bold;">🎥 Analyzing Your Video Live</p>
 
@@ -1710,7 +1785,7 @@
       } else if (data.video_id) {
         console.log("Video ID available but no video preview, attempting live analysis anyway");
         // Try live analysis without video preview
-        loadingContainer.innerHTML = `
+        videoResult.innerHTML = `
           <div style="background: linear-gradient(135deg, rgba(110, 255, 232, 0.1) 0%, rgba(110, 255, 232, 0.05) 100%); border: 1px solid rgba(110, 255, 232, 0.3); border-radius: 12px; padding: 24px; text-align: center;">
             <p style="color: #6effe8; margin: 0 0 16px 0; font-size: 16px; font-weight: bold;">🎥 Analyzing Your Video Live</p>
             <p style="color: #f0f4ff; margin: 0; font-size: 14px;">Real-time rep counting in progress...</p>
@@ -1723,13 +1798,7 @@
         return;
       }
 
-      // Clear loading state and show results
-      loadingContainer.remove();
-
-      const resultsContainer = document.createElement("div");
-      resultsContainer.setAttribute('data-analysis-results', 'true');
-      resultsContainer.style.marginTop = "20px";
-
+      // Replace loading state with results in videoResult
       const exercise = data.exercise || exerciseSelect.value;
       const feedback = data.feedback || data.raw_response || "No feedback available";
 
@@ -1738,45 +1807,45 @@
         .split('\n')
         .map(line => {
           if (line.startsWith('✓')) {
-            return `<div style="color: #2ed573; margin: 8px 0; padding: 8px 12px; background: rgba(46, 213, 115, 0.1); border-left: 3px solid #2ed573; border-radius: 4px;">${line}</div>`;
+            return `<div style="color: #2ed573; margin: 6px 0; padding: 8px 12px; background: rgba(46, 213, 115, 0.1); border-left: 2px solid #2ed573; border-radius: 3px; font-size: 14px;">${line}</div>`;
           } else if (line.startsWith('⚠️') || line.startsWith('Warning')) {
-            return `<div style="color: #ffc107; margin: 8px 0; padding: 8px 12px; background: rgba(255, 193, 7, 0.1); border-left: 3px solid #ffc107; border-radius: 4px;">${line}</div>`;
+            return `<div style="color: #ffc107; margin: 6px 0; padding: 8px 12px; background: rgba(255, 193, 7, 0.1); border-left: 2px solid #ffc107; border-radius: 3px; font-size: 14px;">${line}</div>`;
           } else if (line.startsWith('**') || line.includes('##')) {
-            return `<h4 style="color: #6effe8; margin: 12px 0 8px 0; font-size: 14px;">${line.replace(/\*\*/g, '').replace(/#/g, '')}</h4>`;
+            return `<h4 style="color: #6effe8; margin: 10px 0 6px 0; font-size: 13px; font-weight: 600;">${line.replace(/\*\*/g, '').replace(/#/g, '')}</h4>`;
           } else if (line.trim() !== '') {
-            return `<div style="margin: 4px 0; line-height: 1.6; color: #a8b5d1; font-size: 13px;">${line}</div>`;
+            return `<div style="margin: 4px 0; line-height: 1.5; color: #a8b5d1; font-size: 14px;">${line}</div>`;
           }
           return '';
         })
         .join('');
 
       const analysisHTML = `
-        <div style="background: linear-gradient(135deg, rgba(110, 255, 232, 0.1) 0%, rgba(110, 255, 232, 0.05) 100%); border: 1px solid rgba(110, 255, 232, 0.3); border-radius: 12px; padding: 24px;">
-          <h3 style="margin: 0 0 20px 0; color: #f0f4ff; font-size: 18px;">✅ Form Analysis Complete</h3>
+        <div style="background: linear-gradient(135deg, rgba(110, 255, 232, 0.1) 0%, rgba(110, 255, 232, 0.05) 100%); border: 1px solid rgba(110, 255, 232, 0.3); border-radius: 8px; padding: 16px;">
+          <h3 style="margin: 0 0 12px 0; color: #f0f4ff; font-size: 16px;">✅ Analysis Complete</h3>
           
-          <div style="background: rgba(110, 255, 232, 0.08); border: 1px solid rgba(110, 255, 232, 0.2); border-radius: 8px; padding: 16px; margin-bottom: 16px;">
-            <div style="color: #6effe8; font-weight: 600; font-size: 14px; margin-bottom: 12px;">📋 ${exercise.charAt(0).toUpperCase() + exercise.slice(1)} Feedback</div>
+          <div style="background: rgba(110, 255, 232, 0.08); border: 1px solid rgba(110, 255, 232, 0.2); border-radius: 6px; padding: 12px; margin-bottom: 12px;">
+            <div style="color: #6effe8; font-weight: 600; font-size: 14px; margin-bottom: 8px;">📋 ${exercise.charAt(0).toUpperCase() + exercise.slice(1)} Feedback</div>
             <div style="color: #a8b5d1;">
               ${formattedFeedback}
             </div>
           </div>
           
-          <div style="margin-top: 12px; padding: 12px; background: rgba(110, 255, 232, 0.05); border-radius: 6px; font-size: 11px; color: var(--muted);">
-            <strong style="color: #6effe8;">Analyzed frames:</strong> ${data.num_frames_analyzed || 3} | <strong style="color: #6effe8;">Exercise:</strong> ${exercise.charAt(0).toUpperCase() + exercise.slice(1)}${data.detected_reps ? ` | <strong style="color: #6effe8;">Detected reps:</strong> ${data.detected_reps}` : ''}
+          <div style="margin-top: 8px; padding: 10px; background: rgba(110, 255, 232, 0.05); border-radius: 4px; font-size: 12px; color: var(--muted);">
+            <strong style="color: #6effe8;">Frames:</strong> ${data.num_frames_analyzed || 3} | <strong style="color: #6effe8;">Exercise:</strong> ${exercise.charAt(0).toUpperCase() + exercise.slice(1)}${data.detected_reps ? ` | <strong style="color: #6effe8;">Reps:</strong> ${data.detected_reps}` : ''}
           </div>
         </div>
       `;
 
-      resultsContainer.innerHTML = analysisHTML;
-      videoResult.parentNode.insertBefore(resultsContainer, videoResult.nextSibling);
+      // Set styles to show results without scrolling
+      videoResult.style.maxHeight = "none";
+      videoResult.style.overflow = "visible";
+      videoResult.style.minHeight = "auto";
+      videoResult.innerHTML = analysisHTML;
 
     } catch (e) {
       console.error("Analyze video failed", e);
-      // Remove loading state on error
-      const loadingContainer = document.querySelector('[data-analysis-results]');
-      if (loadingContainer) {
-        loadingContainer.remove();
-      }
+      // Clear loading state on error
+      videoResult.textContent = e.message || "Analysis failed";
       showMessageModal("Video analyze failed", e.message || "Unknown error");
     }
   });

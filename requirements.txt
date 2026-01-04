@@ -1,7 +1,7 @@
 # Image/Video Processing
 opencv-python~=4.12.0.88
 mediapipe~=0.10.31
-numpy~=2.2.6
+numpy~=1.26.0
 
 # Database
 pymysql~=1.1.2
@@ -12,6 +12,7 @@ google-genai~=1.56.0
 # Web Framework
 fastapi~=0.115.0
 uvicorn[standard]~=0.30.0
+slowapi~=0.1.9
 
 # Authentication & Security
 PyJWT~=2.9.0

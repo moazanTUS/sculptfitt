@@ -6,6 +6,7 @@ import os
 import json
 from pathlib import Path
 from datetime import datetime
+from functools import wraps
 
 # Load environment variables
 from dotenv import load_dotenv
@@ -18,6 +19,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+
+# Rate limiting
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from .analyzers.gemini_form_analyzer import GeminiFormAnalyzer
 from .analyzers.user_image_analyzer import UserImageAnalyzer
@@ -74,6 +81,34 @@ print(f"[STARTUP] Using GEMINI_API_KEY: {GEMINI_API_KEY[:20]}...")  # Show first
 
 app = FastAPI(title="SculpFit Web API")
 
+# Rate limiting - per user (authenticated endpoints use user ID, others use IP)
+def get_rate_limit_key(request: Request) -> str:
+    """
+    Rate limit by user ID if authenticated, otherwise by IP.
+    This ensures each user has their own rate limit quota.
+    """
+    try:
+        # Try to get user from request (if auth token present)
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            # For authenticated requests, we'd need to verify the token
+            # For now, use IP but prefer authenticated key if available
+            token = auth_header[7:]
+            # Return token hash as key (unique per user)
+            import hashlib
+            return f"user_{hashlib.md5(token.encode()).hexdigest()}"
+    except:
+        pass
+    # Fall back to IP for unauthenticated requests
+    return get_remote_address(request)
+
+limiter = Limiter(key_func=get_rate_limit_key)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, lambda request, exc: JSONResponse(
+    status_code=429,
+    content={"detail": "Too many requests. Please try again later."}
+))
+
 # CORS: Only allow your domain (set via environment variable)
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:8000").split(",")
 
@@ -84,6 +119,7 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+app.add_middleware(SlowAPIMiddleware)
 
 @app.get("/health")
 async def health():
@@ -282,7 +318,7 @@ def get_plan_details(plan_id: int):
                 # Get exercises for pre-built plans using plan_exercises
                 cur.execute(
                     """
-                    SELECT pe.day_number as day, ex.name as exercise, ex.primary_muscle, 
+                    SELECT pe.day_number as day, ex.name as exercise, ex.muscle_group, 
                            pe.sets, pe.reps, pe.rest_seconds
                     FROM plan_exercises pe
                     LEFT JOIN exercises ex ON pe.exercise_id = ex.id
@@ -304,7 +340,7 @@ def get_plan_details(plan_id: int):
                     if row.get("exercise"):
                         days_dict[day_num]["items"].append({
                             "exercise": row.get("exercise"),
-                            "muscle_group": row.get("primary_muscle"),
+                            "muscle_group": row.get("muscle_group"),
                             "sets": row.get("sets"),
                             "reps": row.get("reps"),
                             "rest_seconds": row.get("rest_seconds")
@@ -327,7 +363,9 @@ def get_plan_details(plan_id: int):
 
 
 @app.post("/api/select-plan")
+@limiter.limit("30/minute")
 async def select_plan(
+    request: Request,
     plan_id: int = Form(...),
     user=Depends(current_user),
 ):
@@ -452,7 +490,9 @@ async def analyze_image(
 
 
 @app.post("/api/analyze-image-v2")
+@limiter.limit("5/minute")
 async def analyze_image_v2(
+    request: Request,
     file: UploadFile = File(...),
     difficulty: str = Form(default="intermediate"),
     daysPerWeek: str = Form(default="4"),
@@ -549,9 +589,9 @@ async def analyze_image_v2(
                                 else:
                                     # Create new exercise if it doesn't exist
                                     cur.execute(
-                                        """INSERT INTO exercises (name, primary_muscle, difficulty)
+                                        """INSERT INTO exercises (name, muscle_group, difficulty)
                                            VALUES (%s, %s, %s)""",
-                                        (ex_name, ex.get('primary_muscle', 'chest'), difficulty)
+                                        (ex_name, ex.get('muscle_group', 'chest'), difficulty)
                                     )
                                     exercise_id = int(cur.lastrowid)
                                 
@@ -588,7 +628,8 @@ async def analyze_image_v2(
 
 
 @app.get("/api/my-plans")
-def my_plans(user=Depends(current_user)):
+@limiter.limit("60/minute")
+async def my_plans(request: Request, user=Depends(current_user)):
     items = list_user_plans(user["clerk_user_id"])
     return {"success": True, "items": items}
 
@@ -706,7 +747,7 @@ def _get_editable_payload(saved_id: str, clerk_user_id: str):
                     """
                     SELECT uwdi.id AS item_id,
                            e.name AS exercise,
-                           e.primary_muscle,
+                           e.muscle_group,
                            uwdi.sets, uwdi.reps, uwdi.rest_seconds, uwdi.position, uwdi.notes
                     FROM user_workout_day_items uwdi
                     JOIN exercises e ON e.id = uwdi.exercise_id
@@ -730,7 +771,8 @@ def _get_editable_payload(saved_id: str, clerk_user_id: str):
 
 
 @app.delete("/api/my-plans/{saved_id}")
-def delete_plan(saved_id: str, user=Depends(current_user)):
+@limiter.limit("30/minute")
+async def delete_plan(request: Request, saved_id: str, user=Depends(current_user)):
     """Delete a saved plan by composite ID (user-owned only)."""
     try:
         from .user_plans import delete_user_plan
@@ -774,7 +816,8 @@ def edit_day_title(user_day_id: int, body: DayTitlePatch, user=Depends(current_u
 
 
 @app.post("/api/edit/days/{user_day_id}/items")
-def add_item(user_day_id: int, body: AddItemBody, user=Depends(current_user)):
+@limiter.limit("60/minute")
+async def add_item(request: Request, user_day_id: int, body: AddItemBody, user=Depends(current_user)):
     try:
         item_id = add_day_item(
             user_day_id,
@@ -800,7 +843,8 @@ def patch_item(item_id: int, body: ItemPatchBody, user=Depends(current_user)):
 
 
 @app.delete("/api/edit/items/{item_id}")
-def remove_item(item_id: int, user=Depends(current_user)):
+@limiter.limit("60/minute")
+async def remove_item(request: Request, item_id: int, user=Depends(current_user)):
     try:
         delete_day_item(item_id, user["clerk_user_id"])
         return {"success": True}
@@ -818,7 +862,9 @@ def reorder_items(user_day_id: int, body: ReorderBody, user=Depends(current_user
 
 
 @app.post("/api/analyze-video")
+@limiter.limit("5/minute")
 async def analyze_video(
+    request: Request,
     exercise: str = Form(...),
     file: UploadFile = File(...),
     start_time: float = Form(None),  # Optional start time in seconds
@@ -1150,7 +1196,7 @@ async def export_plan_csv(
                         cur.execute(
                             """
                             SELECT uwdi.sets, uwdi.reps, uwdi.rest_seconds, uwdi.notes,
-                                   e.name AS exercise, e.primary_muscle AS muscle_group
+                                   e.name AS exercise, e.muscle_group
                             FROM user_workout_day_items uwdi
                             JOIN exercises e ON e.id = uwdi.exercise_id
                             WHERE uwdi.user_day_id = %s
