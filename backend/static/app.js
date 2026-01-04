@@ -2144,7 +2144,7 @@
   }
 
   // VIDEO LIBRARY FUNCTIONS
-  window.loadVideoLibrary = async function() {
+  window.loadVideoLibrary = async function () {
     console.log("[VIDEO LIBRARY] Loading exercises...");
     try {
       const res = await fetch("/api/exercises");
@@ -2178,7 +2178,7 @@
     }
   };
 
-  window.displayExercises = function(exercises) {
+  window.displayExercises = function (exercises) {
     const container = document.getElementById("exerciseList");
     if (!exercises || exercises.length === 0) {
       container.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--muted); grid-column: 1 / -1;">No exercises found</div>';
@@ -2202,7 +2202,7 @@
     `).join("");
   };
 
-  window.viewExerciseDetails = async function(exerciseId) {
+  window.viewExerciseDetails = async function (exerciseId) {
     console.log("[VIDEO LIBRARY] Viewing exercise:", exerciseId);
     try {
       const res = await fetch(`/api/exercises/${exerciseId}`);
@@ -2255,7 +2255,7 @@
     }
   };
 
-  window.filterByMuscleGroup = async function(muscleGroup) {
+  window.filterByMuscleGroup = async function (muscleGroup) {
     console.log("[VIDEO LIBRARY] Filtering by muscle group:", muscleGroup);
     try {
       let res;
@@ -2273,7 +2273,7 @@
     }
   };
 
-  window.searchExercises = async function() {
+  window.searchExercises = async function () {
     const query = document.getElementById("exerciseSearch").value.trim();
     if (query.length < 2) {
       alert("Please enter at least 2 characters to search");
@@ -2293,7 +2293,7 @@
   };
 
   // Setup modal close handlers for video library
-  window.setupVideoLibraryModals = function() {
+  window.setupVideoLibraryModals = function () {
     const videoModal = document.getElementById("exerciseVideoModal");
     const closeBtn = document.getElementById("videoModalCloseBtn");
     if (closeBtn) {
