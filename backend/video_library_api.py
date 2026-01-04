@@ -43,17 +43,16 @@ def register_video_library_routes(app):
                     SELECT DISTINCT
                         e.id,
                         e.name,
-                        e.description,
                         e.muscle_group,
                         e.difficulty,
                         COUNT(ev.id) as video_count
                     FROM exercises e
                     LEFT JOIN exercise_videos ev ON e.id = ev.exercise_id
-                    WHERE (e.name LIKE %s OR e.muscle_group LIKE %s OR e.description LIKE %s)
+                    WHERE (e.name LIKE %s OR e.muscle_group LIKE %s)
                     AND e.id IN (SELECT exercise_id FROM exercise_videos)
                     GROUP BY e.id
                     ORDER BY e.name
-                """, (search_term, search_term, search_term))
+                """, (search_term, search_term))
                 exercises = cur.fetchall()
                 return {"exercises": exercises if exercises else []}
         except Exception as e:
@@ -70,7 +69,6 @@ def register_video_library_routes(app):
                     SELECT 
                         e.id,
                         e.name,
-                        e.description,
                         e.muscle_group,
                         e.difficulty,
                         COUNT(ev.id) as video_count
@@ -94,7 +92,7 @@ def register_video_library_routes(app):
             with conn.cursor() as cur:
                 # Get exercise info
                 cur.execute("""
-                    SELECT id, name, description, muscle_group, difficulty
+                    SELECT id, name, muscle_group, difficulty
                     FROM exercises
                     WHERE id = %s
                 """, (exercise_id,))
@@ -140,7 +138,6 @@ def register_video_library_routes(app):
                     SELECT 
                         e.id,
                         e.name,
-                        e.description,
                         e.muscle_group,
                         e.difficulty,
                         COUNT(ev.id) as video_count
