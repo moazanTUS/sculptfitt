@@ -51,9 +51,6 @@ from . import custom_workouts_api
 # ✅ Video library
 from . import video_library_api
 
-# ✅ Database migrations
-from .migrations import run_migrations
-
 BASE_DIR = Path(__file__).resolve().parent
 OUTPUTS_DIR = BASE_DIR / "outputs"
 STATIC_DIR = BASE_DIR / "static"
@@ -150,18 +147,6 @@ video_library_api.register_video_library_routes(app)
 # Register workout logging routes
 from . import workout_logging_api
 workout_logging_api.register_workout_logging_routes(app, current_user)
-
-
-# Run database migrations on startup (non-blocking)
-@app.on_event("startup")
-async def startup_event():
-    """Run database migrations on app startup in background"""
-    import asyncio
-    try:
-        # Run migrations in a background task so they don't block health checks
-        asyncio.create_task(asyncio.to_thread(run_migrations))
-    except Exception as e:
-        print(f"[STARTUP] Error scheduling migrations (non-fatal): {e}")
 
 
 def _fallback_video_probe(path: Path):
