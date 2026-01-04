@@ -31,56 +31,54 @@ erDiagram
 ```mermaid
 graph TB
     subgraph "Client Layer"
-        WEB["Web Browser<br/>(HTML/JS)"]
-        iOS["iOS App<br/>(Future)"]
+        WEB["Web Browser"]
+        iOS["iOS App Future"]
     end
     
     subgraph "FastAPI Backend"
-        AUTH["Clerk Auth<br/>Middleware"]
-        RATE["Rate Limiter<br/>slowapi"]
-        CORS["CORS<br/>Protection"]
+        AUTH["Clerk Auth Middleware"]
+        RATE["Rate Limiter slowapi"]
+        CORS["CORS Protection"]
         
         subgraph "API Endpoints"
-            IMG_API["Image Analysis<br/>/api/analyze-image-v2"]
-            VID_API["Video Analysis<br/>/api/analyze-video"]
-            PLAN_API["Plan Management<br/>/api/my-plans/*"]
-            EDIT_API["Plan Editing<br/>/api/edit/*"]
-            LOG_API["Workout Logging<br/>/api/workout-sessions"]
-            LIB_API["Video Library<br/>/api/exercise-videos"]
+            IMG_API["Image Analysis /api/analyze-image-v2"]
+            VID_API["Video Analysis /api/analyze-video"]
+            PLAN_API["Plan Management /api/my-plans/*"]
+            EDIT_API["Plan Editing /api/edit/*"]
+            LOG_API["Workout Logging /api/workout-sessions"]
+            LIB_API["Video Library /api/exercise-videos"]
         end
         
         subgraph "Analysis Services"
-            IMG_ANALYZER["UserImageAnalyzer<br/>(Body Type Detection)"]
-            VID_ANALYZER["Exercise Analyzers<br/>(Pushup, Squat, etc)"]
-            FORM_ANALYZER["GeminiFormAnalyzer<br/>(Form Feedback)"]
+            IMG_ANALYZER["UserImageAnalyzer Body Type Detection"]
+            VID_ANALYZER["Exercise Analyzers Pushup Squat etc"]
+            FORM_ANALYZER["GeminiFormAnalyzer Form Feedback"]
         end
         
         subgraph "Business Logic"
-            PLAN_MATCHER["Plan Matcher<br/>(plan_matcher.py)"]
-            USER_PLANS["User Plans<br/>(user_plans.py)"]
-            EDITABLE["Editable Plans<br/>(editable_plans.py)"]
-            CUSTOM["Custom Workouts<br/>(custom_workouts_api.py)"]
+            PLAN_MATCHER["Plan Matcher plan_matcher.py"]
+            USER_PLANS["User Plans user_plans.py"]
+            EDITABLE["Editable Plans editable_plans.py"]
+            CUSTOM["Custom Workouts custom_workouts_api.py"]
         end
         
-        DB[(("MySQL<br/>Database"))]
+        DB[("MySQL Database")]
     end
     
     subgraph "External Services"
-        GOOGLE["Google Gemini API<br/>(AI Analysis)"]
-        MEDIALIB["MediaPipe<br/>(Pose Detection)"]
-        OPENCV["OpenCV<br/>(Video Processing)"]
-        CLERK["Clerk<br/>(Auth Backend)"]
+        GOOGLE["Google Gemini API AI Analysis"]
+        MEDIALIB["MediaPipe Pose Detection"]
+        OPENCV["OpenCV Video Processing"]
+        CLERK["Clerk Auth Backend"]
     end
     
     subgraph "Cloud Storage"
-        RAILWAY["Railway<br/>(Deployment)"]
+        RAILWAY["Railway Deployment"]
     end
     
-    %% Client connections
     WEB -->|HTTP/WebSocket| AUTH
     iOS -->|HTTP/WebSocket| AUTH
     
-    %% Auth flow
     AUTH -->|Verify Token| CLERK
     AUTH --> RATE
     RATE --> CORS
@@ -91,7 +89,6 @@ graph TB
     CORS --> LOG_API
     CORS --> LIB_API
     
-    %% Image analysis flow
     IMG_API --> IMG_ANALYZER
     IMG_ANALYZER --> MEDIALIB
     IMG_ANALYZER --> DB
@@ -99,29 +96,21 @@ graph TB
     PLAN_MATCHER --> DB
     PLAN_MATCHER --> GOOGLE
     
-    %% Video analysis flow
     VID_API --> VID_ANALYZER
     VID_ANALYZER --> OPENCV
     VID_ANALYZER --> MEDIALIB
     VID_ANALYZER --> FORM_ANALYZER
     FORM_ANALYZER --> GOOGLE
     
-    %% Plan management
     PLAN_API --> USER_PLANS
     PLAN_API --> EDITABLE
     USER_PLANS --> DB
     EDITABLE --> DB
     CUSTOM --> DB
     
-    %% Workout logging
     LOG_API --> DB
-    
-    %% Video library
     LIB_API --> DB
     
-    %% All routes query database
-    
-    %% Deployment
     DB -.->|Hosted on| RAILWAY
     RATE -.->|Runs on| RAILWAY
     IMG_ANALYZER -.->|Runs on| RAILWAY
@@ -137,38 +126,38 @@ graph TB
 
 ```mermaid
 sequenceDiagram
-    participant User as User<br/>(Browser/iOS)
-    participant Auth as Auth<br/>Middleware
-    participant API as FastAPI<br/>Server
-    participant Analyzer as Analyzer<br/>Service
-    participant DB as MySQL<br/>Database
-    participant Gemini as Gemini<br/>API
-    participant MediaPipe as MediaPipe<br/>Library
+    participant User as User Browser/iOS
+    participant Auth as Auth Middleware
+    participant API as FastAPI Server
+    participant Analyzer as Analyzer Service
+    participant DB as MySQL Database
+    participant Gemini as Gemini API
+    participant MediaPipe as MediaPipe Library
     
-    User->>Auth: POST /api/analyze-image-v2<br/>with Bearer token + image
+    User->>Auth: POST /api/analyze-image-v2 with Bearer token + image
     Auth->>Auth: Verify Clerk token
     Auth->>Auth: Check rate limit
     Auth->>API: Authenticated request
     
-    API->>Analyzer: Load & process image
+    API->>Analyzer: Load and process image
     Analyzer->>MediaPipe: Extract pose landmarks
     MediaPipe-->>Analyzer: Body keypoints
-    Analyzer->>Analyzer: Calculate body type<br/>& symmetry
+    Analyzer->>Analyzer: Calculate body type and symmetry
     
     Analyzer->>Gemini: Send landmarks + metrics
-    Gemini-->>Analyzer: AI analysis & insights
+    Gemini-->>Analyzer: AI analysis and insights
     
-    API->>API: Match plans based<br/>on focus areas
+    API->>API: Match plans based on focus areas
     API->>DB: Query exercise catalog
     DB-->>API: Matching exercises
     
-    API-->>User: Response with<br/>top 3 plans
+    API-->>User: Response with top 3 plans
     
-    User->>API: POST /api/select-plan<br/>with plan_id
-    API->>DB: Save plan to<br/>user_workout_plans
+    User->>API: POST /api/select-plan with plan_id
+    API->>DB: Save plan to user_workout_plans
     DB-->>API: Confirmation
     
-    API-->>User: Plan saved &<br/>returned
+    API-->>User: Plan saved and returned
     
     User->>API: GET /api/my-plans
     API->>DB: Query user plans
