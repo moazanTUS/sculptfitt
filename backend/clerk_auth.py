@@ -2,8 +2,7 @@ from fastapi import Request, HTTPException
 import jwt
 import requests
 
-# ✅ PUT YOUR ISSUER HERE (very important)
-# Example dev: "https://your-instance.clerk.accounts.dev"
+
 CLERK_ISSUER = "https://fitting-mouse-66.clerk.accounts.dev"
 
 
@@ -35,8 +34,8 @@ def require_clerk_user(request: Request) -> dict:
             token,
             signing_key,
             algorithms=["RS256"],
-            issuer=CLERK_ISSUER,          # ✅ ensures correct instance
-            options={"verify_aud": False} # MVP
+            issuer=CLERK_ISSUER,          
+            options={"verify_aud": False} 
         )
 
         user_id = claims.get("sub")
