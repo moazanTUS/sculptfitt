@@ -1358,51 +1358,6 @@
     container.style.display = "block";
   }
 
-  // Display workout in read-only format on Body Analysis page (legacy)
-  function displayWorkoutReadOnly(plan, days) {
-    const container = document.getElementById("workoutResultsContainer");
-    const detailsDiv = document.getElementById("workoutDetailsDisplay");
-    const titleH2 = document.getElementById("workoutTitle");
-
-    if (!container || !detailsDiv || !plan) return;
-
-    titleH2.textContent = plan.name || "Workout Plan";
-    detailsDiv.innerHTML = "";
-
-    // Display each day - use the days array passed separately
-    for (const day of days || []) {
-      const daySection = document.createElement("div");
-      daySection.style.marginBottom = "20px";
-      daySection.style.padding = "15px";
-      daySection.style.background = "rgba(255, 255, 255, 0.03)";
-      daySection.style.borderRadius = "10px";
-      daySection.style.borderLeft = "3px solid var(--accent)";
-
-      const dayNum = day.day || day.day_number || "?";
-      let dayHTML = `<h3 style="margin-top: 0; margin-bottom: 10px; color: var(--accent);">Day ${dayNum}</h3>`;
-
-      if (day.title) {
-        dayHTML += `<p style="margin: 5px 0; font-size: 0.95em; color: var(--muted);">${day.title}</p>`;
-      }
-
-      dayHTML += "<ul style='margin: 10px 0; padding-left: 20px;'>";
-      const itemsList = day.items || [];
-      for (const item of itemsList) {
-        const exerciseName = item.exercise || item.exercise_name || "Exercise";
-        const sets = item.sets || 3;
-        const reps = item.reps || "8-12";
-        const itemText = `${exerciseName} - ${sets} sets x ${reps} reps`;
-        dayHTML += `<li style="margin: 5px 0; line-height: 1.5;">${itemText}</li>`;
-      }
-      dayHTML += "</ul>";
-
-      daySection.innerHTML = dayHTML;
-      detailsDiv.appendChild(daySection);
-    }
-
-    container.style.display = "block";
-  }
-
   // Visual Video Trimmer
   let trimmerState = {
     isDraggingStart: false,

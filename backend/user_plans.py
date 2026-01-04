@@ -81,15 +81,6 @@ def get_saved_plan(saved_id: int, clerk_user_id: str):
             return cur.fetchone()
 
 
-# DEPRECATED: Old function for pre-built plans (no longer used)
-# def get_plan_days(plan_id: int):
-#     """
-#     Read-only view of template plan days from shared tables.
-#     (Editing uses /api/my-plans/{id}/editable instead.)
-#     """
-#     # This used to read from workout_days which no longer exists
-#     # Plans now use plan_exercises directly
-
 
 def delete_user_plan(saved_id: str, clerk_user_id: str) -> bool:
     """
