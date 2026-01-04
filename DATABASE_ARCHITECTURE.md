@@ -67,8 +67,6 @@ graph TB
     
     subgraph "External Services"
         GOOGLE["Google Gemini API AI Analysis"]
-        MEDIALIB["MediaPipe Pose Detection"]
-        OPENCV["OpenCV Video Processing"]
         CLERK["Clerk Auth Backend"]
     end
     
@@ -90,15 +88,12 @@ graph TB
     CORS --> LIB_API
     
     IMG_API --> IMG_ANALYZER
-    IMG_ANALYZER --> MEDIALIB
     IMG_ANALYZER --> DB
     IMG_ANALYZER --> PLAN_MATCHER
     PLAN_MATCHER --> DB
     PLAN_MATCHER --> GOOGLE
     
     VID_API --> VID_ANALYZER
-    VID_ANALYZER --> OPENCV
-    VID_ANALYZER --> MEDIALIB
     VID_ANALYZER --> FORM_ANALYZER
     FORM_ANALYZER --> GOOGLE
     

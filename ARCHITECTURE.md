@@ -40,7 +40,6 @@
 │  │                        │  - PushupAnalyzer           │ │   │
 │  │                        │  - SquatAnalyzer            │ │   │
 │  │                        │  - ShoulderPressAnalyzer    │ │   │
-│  │                        │  - MediaPipe (Pose Detect)  │ │   │
 │  │                        │  - Gemini API (AI Analysis) │ │   │
 │  │                        └──────────────────────────────┘ │   │
 │  │                                                           │   │
@@ -115,7 +114,7 @@ User Upload
 ┌─────────────────────────────────────────┐
 │ UserImageAnalyzer                       │
 │ - Load image into memory                │
-│ - Extract MediaPipe landmarks           │
+│ - Extract landmarks                     │
 │ - Detect body type from silhouette      │
 │ - Calculate symmetry & posture          │
 └─────────────────────────────────────────┘
@@ -170,10 +169,9 @@ Frontend connects WebSocket
     ↓
 ┌─────────────────────────────────────────┐
 │ Exercise-Specific Analyzer              │
-│ (PushupAnalyzer, SquatAnalyzer, etc)   │
 │ - Process video frame by frame          │
-│ - Detect pose with MediaPipe            │
-│ - Track joint movements                 │
+│ - Detect pose and joint movements       │
+│ - Track motion patterns                 │
 │ - Count reps                            │
 │ - Detect form issues                    │
 └─────────────────────────────────────────┘
@@ -253,7 +251,7 @@ main.py (FastAPI App)
 │   ├── user_image_analyzer.py (Body type detection)
 │   │   ├── base_analyzer.py
 │   │   ├── MediaPipe (Pose detection)
-│   │   └── Gemini API
+
 │   ├── gemini_form_analyzer.py (AI form feedback)
 │   │   └── Gemini API
 │   ├── pushup_analyzer.py (Exercise-specific)
