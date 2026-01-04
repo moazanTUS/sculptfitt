@@ -7,68 +7,23 @@ erDiagram
     USERS ||--o{ USER_SAVED_PLANS : saves
     USERS ||--o{ USER_WORKOUT_PLANS : creates
     USERS ||--o{ CUSTOM_WORKOUTS : creates
-    USERS ||--o{ WORKOUT_SESSIONS : logs
     
-    USER_SAVED_PLANS ||--o{ PLAN_DAYS : contains
-    USER_WORKOUT_PLANS ||--o{ PLAN_DAYS : contains
-    CUSTOM_WORKOUTS ||--o{ PLAN_DAYS : contains
+    USER_SAVED_PLANS }o--|| WORKOUT_PLANS : references
+    USER_WORKOUT_PLANS ||--o{ USER_WORKOUT_DAYS : contains
+    CUSTOM_WORKOUTS ||--o{ CUSTOM_WORKOUT_DAYS : contains
     
-    PLAN_DAYS ||--o{ PLAN_EXERCISES : contains
+    USER_WORKOUT_DAYS ||--o{ USER_WORKOUT_DAY_ITEMS : contains
+    CUSTOM_WORKOUT_DAYS ||--o{ CUSTOM_WORKOUT_EXERCISES : contains
+    
+    USER_WORKOUT_DAY_ITEMS }o--|| EXERCISES : references
+    CUSTOM_WORKOUT_EXERCISES }o--|| EXERCISES : references
+    
+    WORKOUT_PLANS ||--o{ PLAN_EXERCISES : contains
     PLAN_EXERCISES }o--|| EXERCISES : references
     
     EXERCISES ||--o{ EXERCISE_VIDEOS : has
     
-    WORKOUT_SESSIONS }o--|| PLAN_DAYS : logs_for
-    WORKOUT_SESSIONS }o--|| EXERCISES : exercises_in
-
-    USERS : string user_id PK
-    USERS : string email
-    USERS : string full_name
-    USERS : datetime created_at
-    
-    USER_SAVED_PLANS : int plan_id PK
-    USER_SAVED_PLANS : string user_id FK
-    USER_SAVED_PLANS : string plan_name
-    USER_SAVED_PLANS : int duration_weeks
-    
-    USER_WORKOUT_PLANS : int plan_id PK
-    USER_WORKOUT_PLANS : string user_id FK
-    USER_WORKOUT_PLANS : string body_type
-    USER_WORKOUT_PLANS : json focus_areas
-    USER_WORKOUT_PLANS : datetime created_at
-    
-    CUSTOM_WORKOUTS : int plan_id PK
-    CUSTOM_WORKOUTS : string user_id FK
-    CUSTOM_WORKOUTS : string plan_name
-    
-    PLAN_DAYS : int day_id PK
-    PLAN_DAYS : int plan_id FK
-    PLAN_DAYS : int day_number
-    PLAN_DAYS : string day_title
-    
-    PLAN_EXERCISES : int item_id PK
-    PLAN_EXERCISES : int day_id FK
-    PLAN_EXERCISES : int exercise_id FK
-    PLAN_EXERCISES : int sets
-    PLAN_EXERCISES : int reps
-    
-    EXERCISES : int exercise_id PK
-    EXERCISES : string name
-    EXERCISES : string muscle_group
-    EXERCISES : text description
-    
-    EXERCISE_VIDEOS : int video_id PK
-    EXERCISE_VIDEOS : int exercise_id FK
-    EXERCISE_VIDEOS : string video_url
-    EXERCISE_VIDEOS : string thumbnail_url
-    
-    WORKOUT_SESSIONS : int session_id PK
-    WORKOUT_SESSIONS : string user_id FK
-    WORKOUT_SESSIONS : int day_id FK
-    WORKOUT_SESSIONS : datetime completed_at
-    WORKOUT_SESSIONS : int actual_sets
-    WORKOUT_SESSIONS : int actual_reps
-    WORKOUT_SESSIONS : int difficulty_rating
+    PLAN_CACHE ||--o{ WORKOUT_PLANS : stores
 ```
 
 ## Service Connection Architecture
