@@ -116,9 +116,9 @@ sequenceDiagram
     API-->>User: Complete workout plan response
 ```
 
-## Database Tables (Verified from Live Database)
+## Database Tables (From Live Railway Database)
 
-The SculpFit database contains these 15 tables:
+The SculpFit database contains **14 tables** (as of January 2026):
 
 ### exercises
 Exercise library with basic information.
@@ -127,19 +127,8 @@ Exercise library with basic information.
 |--------|------|-------|
 | id | INT (PK) | Auto-increment |
 | name | VARCHAR(100) | Exercise name |
-| primary_muscle | VARCHAR(50) | chest, back, shoulders, legs, etc. |
-| secondary_muscles | JSON | Array of secondary muscle groups |
+| muscle_group | VARCHAR(100) | chest, back, shoulders, legs, arms, core, etc. |
 | difficulty | ENUM | beginner, intermediate, advanced |
-| equipment | VARCHAR(100) | Dumbbells, barbell, bodyweight, etc. |
-| beginner_reps | VARCHAR(20) | Default rep range for beginners |
-| intermediate_reps | VARCHAR(20) | Default rep range for intermediate |
-| advanced_reps | VARCHAR(20) | Default rep range for advanced |
-| sets_beginner | INT | Default sets for beginners |
-| sets_intermediate | INT | Default sets for intermediate |
-| sets_advanced | INT | Default sets for advanced |
-| rest_seconds | INT | Default rest time |
-| instructions | TEXT | How to perform exercise |
-| form_cues | TEXT | Form tips and warnings |
 | created_at | TIMESTAMP | Auto-generated |
 
 ---
@@ -160,26 +149,8 @@ Editable plans created from AI analysis or cloned from pre-built plans.
 
 ---
 
-### user_saved_plans
-Tracks when users select pre-built plans.
-
-| Column | Type | Notes |
-|--------|------|-------|
-| id | INT (PK) | Auto-increment |
-| clerk_user_id | VARCHAR(255) | User ID |
-| plan_id | INT (FK) | References workout_plans |
-| user_plan_id | INT | References user_workout_plans (editable copy) |
-| body_type | VARCHAR(100) | ectomorph, mesomorph, or endomorph |
-| focus1 | VARCHAR(100) | Primary focus area |
-| focus2 | VARCHAR(100) | Secondary focus area |
-| focus3 | VARCHAR(100) | Tertiary focus area |
-| saved_at | TIMESTAMP | When user selected plan |
-| created_at | TIMESTAMP | Auto-generated |
-
----
-
 ### user_workout_days
-Days within AI-generated user plans.
+Days within user workout plans.
 
 | Column | Type | Notes |
 |--------|------|-------|
@@ -200,9 +171,10 @@ Exercises within user workout days.
 | user_day_id | INT (FK) | References user_workout_days |
 | exercise_id | INT (FK) | References exercises |
 | sets | INT | Sets to perform |
-| reps | VARCHAR(50) | "6-12" |
-| rest_seconds | INT | Rest time |
-| position | INT | Order in workout |
+| reps | VARCHAR(50) | Reps per set (e.g., "6-12") |
+| rest_seconds | INT | Rest time between sets |
+| position | INT | Order in workout day |
+| notes | VARCHAR(255) | Optional notes |
 | created_at | TIMESTAMP | Auto-generated |
 
 ---
@@ -224,6 +196,7 @@ User-created custom workouts.
 ---
 
 ### custom_workout_days
+Days in custom workouts.
 
 | Column | Type | Notes |
 |--------|------|-------|
@@ -242,13 +215,13 @@ Exercises in custom workout days.
 |--------|------|-------|
 | id | INT (PK) | Auto-increment |
 | custom_day_id | INT (FK) | References custom_workout_days |
-| exercise_id | INT (FK) | References exercises (or NULL) |
+| exercise_id | INT (FK) | References exercises |
 | exercise_name | VARCHAR(255) | Exercise name |
 | sets | INT | Sets to perform |
-| reps | VARCHAR(50) | Reps per set (e.g., "8-12") |
+| reps | VARCHAR(50) | Reps per set |
 | rest_seconds | INT | Rest time between sets |
 | notes | VARCHAR(255) | Optional notes |
-| position | INT | Order in workout |
+| position | INT | Order in workout day |
 | created_at | TIMESTAMP | Auto-generated |
 
 ---
@@ -262,8 +235,8 @@ Pre-built workout templates that users can browse and select.
 | name | VARCHAR(255) | Plan name |
 | description | TEXT | Plan description |
 | body_type | ENUM | ectomorph, mesomorph, endomorph |
-| primary_focus | VARCHAR(100) | Main focus area |
-| focus | VARCHAR(100) | Secondary focus |
+| primary_focus | VARCHAR(100) | Main focus area (chest, back, legs, etc.) |
+| focus | VARCHAR(100) | Secondary focus area |
 | difficulty | ENUM | beginner, intermediate, advanced |
 | days_per_week | INT | 3-7 days |
 | created_at | TIMESTAMP | Auto-generated |
@@ -279,10 +252,10 @@ Exercises in pre-built workout plans.
 | plan_id | INT (FK) | References workout_plans |
 | day_number | INT | Which day (1-7) |
 | exercise_id | INT (FK) | References exercises |
-| position | INT | Order in day |
-| sets | INT | Sets to perform |
-| reps | VARCHAR(50) | Reps per set |
-| rest_seconds | INT | Rest time |
+| position | INT | Order in day (1st, 2nd, 3rd exercise) |
+| sets | INT | Number of sets |
+| reps | VARCHAR(50) | Rep range (e.g., "6-12") |
+| rest_seconds | INT | Rest between sets |
 | notes | VARCHAR(255) | Optional notes |
 | created_at | TIMESTAMP | Auto-generated |
 
@@ -296,10 +269,14 @@ Logged workout sessions by users.
 | id | INT (PK) | Auto-increment |
 | clerk_user_id | VARCHAR(255) | User ID |
 | workout_plan_id | INT | Plan ID |
-| workout_plan_type | VARCHAR(50) | "ai_generated" or "custom" |
+| workout_plan_type | ENUM | custom, ai, saved |
 | workout_name | VARCHAR(255) | Session name |
 | day_number | INT | Which day of plan |
 | session_date | DATE | When workout occurred |
+| completed_at | TIMESTAMP | When session completed |
+| duration_minutes | INT | Total workout duration |
+| notes | TEXT | Session notes |
+| rating | INT | User's difficulty rating (1-10) |
 | created_at | TIMESTAMP | Auto-generated |
 
 ---
@@ -313,10 +290,16 @@ Individual exercises logged in sessions.
 | session_id | INT (FK) | References workout_sessions |
 | exercise_id | INT (FK) | References exercises |
 | exercise_name | VARCHAR(255) | Exercise name |
-| sets_completed | INT | Sets actually done |
-| reps_completed | VARCHAR(50) | Reps actually done |
-| weight_used | DECIMAL(5,2) | Weight lifted |
-| notes | TEXT | User notes |
+| planned_sets | INT | Sets that were planned |
+| planned_reps | VARCHAR(50) | Reps that were planned |
+| planned_rest_seconds | INT | Rest time planned |
+| completed_sets | INT | Sets actually completed |
+| completed_reps | VARCHAR(50) | Reps actually completed |
+| weight_used | DECIMAL(8,2) | Weight lifted |
+| rpe | INT | Rate of Perceived Exertion (1-10) |
+| notes | TEXT | Exercise-specific notes |
+| position | INT | Order in session |
+| completed_at | TIMESTAMP | When exercise completed |
 | created_at | TIMESTAMP | Auto-generated |
 
 ---
@@ -330,10 +313,13 @@ User progress tracking and statistics.
 | clerk_user_id | VARCHAR(255) | User ID |
 | exercise_id | INT (FK) | References exercises |
 | exercise_name | VARCHAR(255) | Exercise name |
-| personal_record_weight | DECIMAL(5,2) | Best weight |
-| personal_record_reps | INT | Best reps |
-| personal_record_date | DATE | When PR achieved |
-| total_sessions | INT | Times this exercise done |
+| personal_record_weight | DECIMAL(8,2) | Best weight lifted |
+| personal_record_reps | INT | Best reps at max weight |
+| personal_record_date | DATE | When PR was achieved |
+| total_times_completed | INT | Total times this exercise done |
+| last_completed_date | DATE | Last workout with this exercise |
+| average_rpe | DECIMAL(3,1) | Average effort rating |
+| created_at | TIMESTAMP | Auto-generated |
 | updated_at | TIMESTAMP | Auto-updated |
 
 ---
@@ -345,12 +331,17 @@ Video library for exercise demonstrations.
 |--------|------|-------|
 | id | INT (PK) | Auto-increment |
 | exercise_id | INT (FK) | References exercises |
-| video_url | VARCHAR(255) | YouTube/video URL |
-| thumbnail_url | VARCHAR(255) | Thumbnail image |
 | title | VARCHAR(255) | Video title |
+| video_url | VARCHAR(500) | YouTube/video URL |
+| thumbnail_url | VARCHAR(500) | Thumbnail image URL |
+| duration_seconds | INT | Video length in seconds |
 | description | TEXT | Video description |
+| common_mistakes | TEXT | Common form mistakes |
+| form_tips | TEXT | Form tips and cues |
 | difficulty_level | ENUM | beginner, intermediate, advanced |
+| views | INT | Number of views |
 | created_at | TIMESTAMP | Auto-generated |
+| updated_at | TIMESTAMP | Auto-updated |
 
 ---
 
@@ -360,8 +351,8 @@ Database migration tracking.
 | Column | Type | Notes |
 |--------|------|-------|
 | id | INT (PK) | Auto-increment |
-| name | VARCHAR(255) | Migration name |
-| applied_at | TIMESTAMP | When applied |
+| name | VARCHAR(255) | Migration name/filename |
+| applied_at | TIMESTAMP | When migration was applied |
 
 ### custom_workout_days
 Days in custom workouts.
@@ -511,31 +502,28 @@ Pre-built workout templates that users can browse and select.
 
 ## Active vs Inactive Components
 
-### ✅ Actively Used Tables
+### ✅ Tables Present in Live Database (14 total)
 | Table | Used By | Purpose |
 |-------|---------|---------|
 | `exercises` | All features | Central exercise catalog |
 | `workout_plans` | `/api/available-plans`, `/api/plans/{id}` | Pre-built plan templates |
 | `plan_exercises` | `/api/plans/{id}`, `ensure_editable_copy()` | Exercises in pre-built plans |
-| `user_workout_plans` | AI analysis, plan selection | User's saved/generated plans |
+| `user_workout_plans` | AI analysis, plan selection | User's editable/generated plans |
 | `user_workout_days` | Plan editing | Days within user plans |
 | `user_workout_day_items` | Plan editing | Exercises in user plan days |
 | `custom_workouts` | `/api/custom-workouts` | User-created workouts |
 | `custom_workout_days` | Custom workouts | Days in custom workouts |
 | `custom_workout_exercises` | Custom workouts | Exercises in custom days |
 | `workout_sessions` | `/api/workout-sessions` | Logged workout sessions |
-| `workout_session_exercises` | Workout logging | Exercises logged per session |
-| `workout_progress` | `/api/progress/stats` | PRs and progress tracking |
-| `exercise_videos` | `/api/exercises/*` | Video library |
+| `workout_session_exercises` | Workout logging | Individual exercises logged |
+| `workout_progress` | Progress tracking | PRs and exercise statistics |
+| `exercise_videos` | Video library | Exercise demonstration videos |
+| `migrations` | Internal | Schema version tracking |
 
-### ⚠️ System Tables
-- `migrations` - Schema version tracking (internal use)
+### ❌ NOT Present in Live Database
+- **`user_saved_plans`** - Defined in init_database.sql but NOT created in live database. Code references this table but it needs to be created if saving pre-built plans is needed.
 
-### ❌ In Schema but Not in Live DB
-- `user_saved_plans` - Defined in init_database.sql but not present in actual database. Code in `user_plans.py` references it but table may need to be created.
-- `plan_cache` - Defined in init_database.sql for caching, not present in live database.
-
-### ⚠️ Code Files Present but Not Called
-- pushup_analyzer.py (exists but not imported in main.py)
-- squat_analyzer.py (exists but not imported in main.py)
-- shoulder_press_analyzer.py (exists but not imported in main.py)
+### ⚠️ Code Files Present but Not Active
+- `pushup_analyzer.py` (exists but not imported/used in main.py)
+- `squat_analyzer.py` (exists but not imported/used in main.py)
+- `shoulder_press_analyzer.py` (exists but not imported/used in main.py)
