@@ -124,19 +124,18 @@ User Upload
 └─────────────────────────────────────────┘
     ↓
 ┌─────────────────────────────────────────┐
-│ Plan Matcher (plan_matcher.py)          │
-│ - Query exercises by focus areas        │
-│ - Score plans by match %                │
-│ - Return top 3 plans                    │
+│ Workout Plan Generation (main.py)       │
+│ - Generate AI workout plan              │
+│ - Query/create exercises                │
+│ - Save to user_workout_plans            │
 └─────────────────────────────────────────┘
     ↓
 Response to Frontend
 - body_type
 - focus_areas
-- matched_plans[]
+- generated_plan{}
     ↓
-User clicks "Save Plan"
-    ↓
+Plan automatically saved to database
 ┌─────────────────────────────────────────┐
 │ POST /api/select-plan                   │
 │ - Save plan to user_workout_plans       │
@@ -232,7 +231,6 @@ Display on Progress page
 main.py (FastAPI App)
 ├── clerk_auth.py (Authentication)
 ├── db.py (Database Connection)
-├── migrations.py (Schema Setup)
 ├── user_plans.py (User CRUD)
 │   └── db.py
 ├── editable_plans.py (Plan Editing)
@@ -245,11 +243,14 @@ main.py (FastAPI App)
 │   └── db.py
 ├── analyzers/
 │   ├── base_analyzer.py (Base class)
-│   ├── user_image_analyzer.py (Body type detection)
+│   ├── user_image_analyzer.py (Body type detection - ACTIVE)
 │   │   ├── base_analyzer.py
 │   │   └── Gemini API
-│   ├── gemini_form_analyzer.py (AI form feedback)
+│   ├── gemini_form_analyzer.py (AI form feedback - ACTIVE)
 │   │   └── Gemini API
+│   ├── pushup_analyzer.py (Not used in app)
+│   ├── squat_analyzer.py (Not used in app)
+│   ├── shoulder_press_analyzer.py (Not used in app)
 │   └── __init__.py
 └── static/ (Frontend)
     ├── index.html

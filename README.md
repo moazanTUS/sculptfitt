@@ -64,7 +64,6 @@ sculpt/
 ├── backend/
 │   ├── main.py                          # FastAPI app, all endpoints
 │   ├── db.py                            # Database connection & utilities
-│   ├── migrations.py                    # Database schema migrations
 │   ├── clerk_auth.py                    # Clerk authentication
 │   ├── user_plans.py                    # User plan management
 │   ├── editable_plans.py                # Plan editing logic
@@ -75,9 +74,9 @@ sculpt/
 │   │   ├── base_analyzer.py             # Base analyzer class
 │   │   ├── user_image_analyzer.py       # Image analysis (body type detection)
 │   │   ├── gemini_form_analyzer.py      # Gemini API integration for analysis
-│   │   ├── pushup_analyzer.py           # Exercise-specific analyzers
-│   │   ├── squat_analyzer.py
-│   │   └── shoulder_press_analyzer.py
+│   │   ├── pushup_analyzer.py           # Exercise-specific analyzers (not used)
+│   │   ├── squat_analyzer.py            # (not used)
+│   │   └── shoulder_press_analyzer.py   # (not used)
 │   ├── static/
 │   │   ├── index.html                   # Main UI
 │   │   ├── app.js                       # Frontend logic
@@ -403,11 +402,6 @@ MySQL Database
 - MySQL connection pooling
 - Utility functions for common queries
 - Transaction handling
-
-#### 6. **Migrations (migrations.py)**
-- Auto-runs SQL migrations on startup
-- Non-blocking (runs async)
-- Tracks applied migrations to prevent re-runs
 
 ---
 

@@ -122,24 +122,26 @@ def require_clerk_user(request: Request):
 
 **GET `/api/me`**
 - Returns current user info from Clerk
-- Used to verify authentication status
 
-**GET `/api/my-plans` (60/min)**
-- Returns all user's plans (AI + custom + saved)
-- Returns composite IDs: `ai_123`, `custom_456`, `saved_789`
+**GET `/api/my-plans`**
+- Returns all user's plans (AI + custom)
+- Returns composite IDs: `ai_123`, `custom_456`
 
 **GET `/api/my-plans/{saved_id}`**
 - Get full plan structure with all days and exercises
-- Handles all three plan types
 
 **GET `/api/my-plans/{saved_id}/editable`**
-- Get plan in editable format
-- Returns structure for frontend editing
+- Get plan in editable format for frontend editing
 
-**POST `/api/select-plan` (30/min)**
+**GET `/api/my-plans/{saved_id}/export-csv`**
+- Export plan to CSV format
+
+**DELETE `/api/my-plans/{saved_id}`**
+- Delete a user's plan
+
+**POST `/api/select-plan`**
 - Select a pre-built workout plan
 - Creates entry in `user_saved_plans`
-- Creates editable copy in `user_workout_plans`
 
 **POST `/api/analyze-image-v2` (5/min)**
 - Upload photo for body analysis
@@ -148,38 +150,42 @@ def require_clerk_user(request: Request):
 
 **POST `/api/edit/days/{user_day_id}/items`**
 - Add exercise to workout day
-- Request: `{ exercise_id, sets, reps, rest_seconds }`
 
 **DELETE `/api/edit/items/{item_id}`**
 - Remove exercise from day
 
-**PATCH `/api/edit/days/{user_day_id}/title`**
-- Update day title (e.g., "Chest & Triceps")
+**PATCH `/api/edit/days/{user_day_id}`**
+- Update day title
+
+**PATCH `/api/edit/items/{item_id}`**
+- Update exercise sets/reps/rest
+
+**PATCH `/api/edit/days/{user_day_id}/reorder`**
+- Reorder exercises in day
 
 **POST `/api/analyze-video` (5/min)**
 - Upload video for form analysis
 - Returns video_id and WebSocket URL
 
-**WebSocket `/ws/analyze-video/{video_id}`**
-- Real-time video analysis stream
-- Sends frame progress, rep count, form feedback
-
 **GET `/api/available-plans`**
-- Get pre-built workout plans (not user-specific)
-- Optional `days` query parameter to filter
+- Get pre-built workout plans (public)
 
 **GET `/api/plans/{plan_id}`**
 - Get details of specific pre-built plan
-- Returns all days and exercises
 
 ### Public Endpoints
 
 **GET `/health`**
-- Health check (no auth)
-- Used by Railway deployment health checks
+- Health check (used by Railway)
+
+**GET `/api/health`**
+- API health check
 
 **GET `/`**
 - Serves static HTML frontend
+
+**GET `/signin`**
+- Sign in page
 
 ---
 
