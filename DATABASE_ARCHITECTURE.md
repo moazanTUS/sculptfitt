@@ -4,7 +4,6 @@
 
 ```mermaid
 erDiagram
-    USERS ||--o{ USER_SAVED_PLANS : saves
     USERS ||--o{ USER_WORKOUT_PLANS : creates
     USERS ||--o{ CUSTOM_WORKOUTS : creates
     USERS ||--o{ WORKOUT_SESSIONS : logs
@@ -20,6 +19,9 @@ erDiagram
     
     EXERCISES ||--o{ EXERCISE_VIDEOS : has
     WORKOUT_SESSIONS ||--o{ WORKOUT_SESSION_EXERCISES : contains
+    
+    WORKOUT_PLANS ||--o{ PLAN_EXERCISES : contains
+    PLAN_EXERCISES }o--|| EXERCISES : references
 ```
 
 ## Service Connection Architecture
@@ -214,21 +216,6 @@ Exercises in custom workout days.
 
 ---
 
-### user_saved_plans
-When users save pre-built plans (currently unused in app).
-
-| Column | Type | Notes |
-|--------|------|-------|
-| id | INT (PK) | Auto-increment |
-| clerk_user_id | VARCHAR(255) | User ID from Clerk |
-| plan_id | INT (FK) | References workout_plans |
-| body_type | VARCHAR(100) | Body type |
-| focus1, focus2, focus3 | VARCHAR(100) | Focus areas |
-| saved_at | TIMESTAMP | When saved |
-| created_at | TIMESTAMP | Auto-generated |
-
----
-
 ### workout_sessions
 Logged workout sessions by users.
 
@@ -329,16 +316,14 @@ Exercises linked to pre-built plans (referenced but not actively used).
 
 ---
 
-### exercise_muscle_groups
-Junction table for exercises with multiple muscle groups.
+### migrations
+Database migration tracking.
 
 | Column | Type | Notes |
 |--------|------|-------|
 | id | INT (PK) | Auto-increment |
-| exercise_id | INT (FK) | References exercises |
-| muscle_group | VARCHAR(50) | Muscle group name |
-| is_primary | BOOLEAN | Primary or secondary muscle |
-| created_at | TIMESTAMP | Auto-generated |
+| name | VARCHAR(255) | Migration name |
+| applied_at | TIMESTAMP | When applied |
 
 ## Key Data Relationships
 
@@ -372,10 +357,10 @@ Junction table for exercises with multiple muscle groups.
 - exercise_videos table (video library)
 - exercises table (exercise catalog)
 
-### ⚠️ Present but Unused
+### ⚠️ Present but Unused in UI
 - workout_plans table (pre-built templates not implemented in UI)
 - plan_exercises table (pre-built templates not implemented in UI)
-- user_saved_plans table (save functionality not active)
+- migrations table (schema version tracking)
 
 ### ⚠️ Code Files Present but Not Called
 - pushup_analyzer.py (exists but not imported in main.py)
