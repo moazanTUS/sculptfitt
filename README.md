@@ -46,8 +46,7 @@ A full-stack web application that uses AI and computer vision to analyze workout
 - **FastAPI** - Python web framework
 - **Uvicorn** - ASGI server
 - **MySQL** - Database
-- **MediaPipe** - Pose detection for form analysis
-- **Google Gemini API** - AI for analysis and recommendations
+- **Google Gemini API** - AI for body analysis and recommendations
 - **PyJWT** - Token handling
 - **slowapi** - Rate limiting middleware
 
@@ -243,9 +242,12 @@ const data = await res.json();
 #### Video Analysis
 **POST** `/api/analyze-video`
 - Analyzes exercise form from video
-- Returns form feedback and rep count
+- Returns video_id for WebSocket connection
 - Rate limit: 5/minute
-- WebSocket support for live analysis
+
+**WebSocket** `/ws/analyze-video/{video_id}`
+- Connects to receive real-time analysis
+- Returns form feedback and suggestions
 
 ```javascript
 const form = new FormData();
@@ -359,13 +361,17 @@ FastAPI Server (main.py)
 ├─ CORS Middleware
 └─ Routes
     ├─ Image Analysis
-    │  └─ UserImageAnalyzer (Gemini AI + MediaPipe)
+    │  └─ UserImageAnalyzer (Gemini AI)
     ├─ Video Analysis
-    │  └─ ExerciseAnalyzer (Pose detection + AI feedback)
+    │  └─ GeminiFormAnalyzer (AI form feedback)
     ├─ Plan Management
-    │  └─ Plan APIs (user_plans.py, plan_api.py)
+    │  └─ Plan APIs (user_plans.py, editable_plans.py)
+    ├─ Custom Workouts
+    │  └─ Custom Workout APIs (custom_workouts_api.py)
     ├─ Workout Logging
-    │  └─ Workout Session APIs
+    │  └─ Workout Session APIs (workout_logging_api.py)
+    ├─ Video Library
+    │  └─ Video Library APIs (video_library_api.py)
     └─ Static Files
         └─ Frontend UI
     ↓
@@ -381,22 +387,22 @@ MySQL Database
 
 #### 2. **Image Analysis (analyzers/user_image_analyzer.py)**
 - Takes user photo as input
-- Uses MediaPipe to detect pose/body landmarks
-- Sends to Gemini AI for analysis
-- Returns body type and focus areas
-- Triggers automatic plan matching
+- Sends image to Gemini AI for body analysis
+- Returns body type (ectomorph, mesomorph, endomorph)
+- Returns focus areas for workout customization
+- Generates AI workout plan automatically
 
-#### 3. **Video Analysis (analyzers/\*_analyzer.py)**
-- Exercise-specific form checking
-- Detects reps from pose sequence
-- Provides real-time WebSocket updates
-- Generates form feedback via Gemini
+#### 3. **Video Analysis (analyzers/gemini_form_analyzer.py)**
+- Takes exercise video as input
+- Sends video frames to Gemini AI
+- Returns form feedback and suggestions
+- No real-time processing (async response)
 
-#### 4. **Plan Management (user_plans.py, plan_api.py)**
+#### 4. **Plan Management (user_plans.py, editable_plans.py)**
 - Saves user plans to database
 - Stores plan structure (days → exercises)
-- Allows editing (add/remove exercises)
-- Tracks which plans are AI-generated vs custom
+- Allows editing via editable_plans.py
+- Tracks AI-generated vs custom workouts
 
 #### 5. **Database (db.py)**
 - MySQL connection pooling
@@ -412,25 +418,23 @@ MySQL Database
 1. User uploads photo + grants consent
 2. `/api/analyze-image-v2` receives request
 3. UserImageAnalyzer processes image:
-   - Detects body type (ectomorph, mesomorph, endomorph)
-   - Identifies focus areas (upper body, legs, core)
-   - Analyzes posture and symmetry
-4. Results sent to Gemini AI for detailed analysis
-5. Plan matcher finds 3 best matching plans
-6. Frontend displays results + allows saving plan
+   - Sends to Gemini AI for body type detection
+   - Determines focus areas (chest, back, legs, etc.)
+4. Gemini AI generates personalized workout plan
+5. Plan automatically saved to database
+6. Frontend displays results + generated plan
 
 ### Video Analysis Workflow
 
-1. User uploads video + selects exercise
-2. `/api/analyze-video` processes video
-3. Video stored temporarily, video_id returned
-4. Frontend initiates WebSocket connection with video_id
-5. ExerciseAnalyzer (specific to exercise type) processes frames:
-   - Detects pose in each frame
-   - Counts reps from pose sequence
-   - Identifies form issues
-6. Results streamed via WebSocket in real-time
-7. Frontend displays feedback + rep count
+1. User uploads video + selects exercise type
+2. `/api/analyze-video` processes video and returns `video_id`
+3. Frontend connects to WebSocket at `/ws/analyze-video/{video_id}`
+4. GeminiFormAnalyzer extracts frames and sends to Gemini AI
+5. Gemini AI analyzes form and provides feedback
+6. Response streamed via WebSocket with:
+   - Form quality assessment
+   - Specific improvement suggestions
+   - Safety warnings if applicable
 
 ### Workout Plan System
 
@@ -537,7 +541,7 @@ pip install -r requirements.txt --upgrade
 ### Video Analysis Not Working
 - Ensure FFmpeg is installed: `ffmpeg -version`
 - Check video codec compatibility
-- Verify MediaPipe is installed: `pip show mediapipe`
+- Verify Gemini API key is set correctly
 
 ---
 

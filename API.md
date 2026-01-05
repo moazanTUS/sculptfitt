@@ -127,28 +127,22 @@ curl -X POST http://localhost:8000/api/analyze-video \
 ```json
 {
   "success": true,
-  "video_id": "vid_abc123",
+  "type": "gemini_analysis",
   "exercise": "pushup",
   "feedback": "Great form on descent. Keep core tight.",
-  "detected_reps": 15,
-  "form_score": 8.5,
-  "issues": [
-    "Slight elbow flare on rep 5",
-    "Could go deeper on rep 12"
-  ],
-  "num_frames_analyzed": 120
+  "raw_response": "...",
+  "num_frames_analyzed": 7,
+  "detected_reps": null
 }
 ```
 
 **WebSocket** (Live Analysis):
 ```javascript
-const ws = new WebSocket(`ws://localhost:8000/ws/analyze/${videoId}`);
+const ws = new WebSocket(`ws://localhost:8000/ws/analyze-video/${videoId}`);
 ws.onmessage = (e) => {
   const data = JSON.parse(e.data);
-  // { type: "progress", frame: 50, total: 120 }
-  // { type: "rep", rep_number: 1, confidence: 0.95 }
-  // { type: "feedback", text: "..." }
-  // { type: "complete", reps: 15 }
+  // { type: "analysis_complete", feedback: "...", exercise: "..." }
+  // { type: "error", message: "..." }
 };
 ```
 

@@ -120,6 +120,7 @@ def require_clerk_user(request: Request):
 
 ### Authentication Required Endpoints
 
+#### User Plans (main.py)
 **GET `/api/me`**
 - Returns current user info from Clerk
 
@@ -148,6 +149,7 @@ def require_clerk_user(request: Request):
 - Returns: body_type, focus areas, generated workout plan
 - Plan automatically saved to `user_workout_plans`
 
+#### Plan Editing (main.py + editable_plans.py)
 **POST `/api/edit/days/{user_day_id}/items`**
 - Add exercise to workout day
 
@@ -163,29 +165,95 @@ def require_clerk_user(request: Request):
 **PATCH `/api/edit/days/{user_day_id}/reorder`**
 - Reorder exercises in day
 
+#### Video Analysis (main.py)
 **POST `/api/analyze-video` (5/min)**
 - Upload video for form analysis
-- Returns video_id and WebSocket URL
+- Returns video_id for WebSocket connection
 
-**GET `/api/available-plans`**
-- Get pre-built workout plans (public)
+**WebSocket `/ws/analyze-video/{video_id}`**
+- Real-time video analysis connection
+- Sends frames to Gemini AI for form analysis
+- Returns analysis_complete message with feedback
 
-**GET `/api/plans/{plan_id}`**
-- Get details of specific pre-built plan
+#### Custom Workouts (custom_workouts_api.py)
+**POST `/api/custom-workouts`**
+- Create a new custom workout with exercises
+
+**GET `/api/custom-workouts`**
+- Get all custom workouts for the user
+
+**GET `/api/custom-workouts/{workout_id}`**
+- Get a specific custom workout with all exercises
+
+**POST `/api/custom-workouts/{workout_id}/exercises`**
+- Add exercise to an existing custom workout
+
+**DELETE `/api/custom-workouts/{workout_id}`**
+- Delete a custom workout
+
+#### Workout Logging (workout_logging_api.py)
+**POST `/api/workout-sessions`**
+- Start a new workout session
+
+**GET `/api/workout-sessions`**
+- Get all workout sessions for the user
+
+**GET `/api/workout-sessions/{session_id}`**
+- Get a specific workout session with exercises
+
+**DELETE `/api/workout-sessions/{session_id}`**
+- Delete a workout session
+
+**POST `/api/workout-sessions/{session_id}/exercises/{exercise_id}/log`**
+- Log exercise performance (sets, reps, weight)
+
+**POST `/api/workout-sessions/{session_id}/complete`**
+- Mark a workout session as completed
+
+**GET `/api/progress/stats`**
+- Get user's progress statistics and personal records
 
 ### Public Endpoints
 
+#### Health Checks
 **GET `/health`**
 - Health check (used by Railway)
 
 **GET `/api/health`**
 - API health check
 
+#### Static Content
 **GET `/`**
 - Serves static HTML frontend
 
 **GET `/signin`**
 - Sign in page
+
+#### Pre-built Plans
+**GET `/api/available-plans`**
+- Get pre-built workout plans (public)
+
+**GET `/api/plans/{plan_id}`**
+- Get details of specific pre-built plan
+
+#### Video Library (video_library_api.py)
+**GET `/api/exercises/muscle-groups`**
+- Get list of all muscle groups with videos
+
+**GET `/api/exercises/videos/search?q={query}`**
+- Search exercises with videos by name or muscle group
+
+**GET `/api/exercises`**
+- Get all exercises with videos
+
+**GET `/api/exercises/{exercise_id}`**
+- Get exercise details with all its videos
+
+**GET `/api/exercises/by-muscle-group/{muscle_group}`**
+- Get exercises filtered by muscle group
+
+**POST `/api/video/record-view/{video_id}`**
+- Record a video view (analytics)
 
 ---
 

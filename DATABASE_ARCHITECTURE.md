@@ -377,8 +377,7 @@ Junction table for exercises with multiple muscle groups.
 - plan_exercises table (pre-built templates not implemented in UI)
 - user_saved_plans table (save functionality not active)
 
-### ❌ Documented but Not Used
-- MediaPipe pose detection (not integrated)
-- OpenCV video analysis (not integrated)
-- pushup/squat/shoulder analyzers (exist but not called)
-- plan_matcher.py (file doesn't exist)
+### ⚠️ Code Files Present but Not Called
+- pushup_analyzer.py (exists but not imported in main.py)
+- squat_analyzer.py (exists but not imported in main.py)
+- shoulder_press_analyzer.py (exists but not imported in main.py)
