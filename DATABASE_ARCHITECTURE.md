@@ -20,16 +20,6 @@ erDiagram
     CUSTOM_WORKOUT_EXERCISES }o--|| EXERCISES : references
     
     WORKOUT_PLANS ||--o{ PLAN_EXERCISES : contains
-    PLAN_EXERCISES }o--|| EXERCISES : references
-    
-    EXERCISES ||--o{ EXERCISE_VIDEOS : has
-    
-    WORKOUT_SESSIONS ||--o{ WORKOUT_SESSION_EXERCISES : contains
-    WORKOUT_SESSION_EXERCISES }o--|| EXERCISES : references
-    
-    USERS ||--o{ WORKOUT_PROGRESS : tracks
-    
-    PLAN_CACHE ||--o{ WORKOUT_PLANS : stores
 ```
 
 ## Service Connection Architecture
@@ -62,7 +52,6 @@ graph TB
         end
         
         subgraph "Business Logic"
-            PLAN_MATCHER["Plan Matcher plan_matcher.py"]
             USER_PLANS["User Plans user_plans.py"]
             EDITABLE["Editable Plans editable_plans.py"]
             CUSTOM["Custom Workouts custom_workouts_api.py"]
@@ -95,9 +84,7 @@ graph TB
     
     IMG_API --> IMG_ANALYZER
     IMG_ANALYZER --> DB
-    IMG_ANALYZER --> PLAN_MATCHER
-    PLAN_MATCHER --> DB
-    PLAN_MATCHER --> GOOGLE
+    IMG_ANALYZER --> GOOGLE
     
     VID_API --> VID_ANALYZER
     VID_ANALYZER --> FORM_ANALYZER

@@ -206,7 +206,7 @@ def require_clerk_user(request: Request):
    - difficulty level
    - days_per_week
    
-5. Call Gemini again to generate plan
+7. Call Gemini to generate complete workout plan
    → Returns JSON with days[] and exercises[]
    
 6. Save to user_workout_plans table
@@ -349,22 +349,6 @@ WHERE uwdi.user_day_id = ?
 ORDER BY uwdi.position
 ```
 
-### Delete Plan (Handles 3 Types)
-
-```python
-# In user_plans.py delete_user_plan()
-
-if saved_id.startswith('custom_'):
-    DELETE FROM custom_workouts WHERE id = ?
-    
-elif saved_id.startswith('ai_'):
-    DELETE FROM user_workout_plans WHERE id = ?
-    
-elif saved_id.startswith('saved_'):
-    DELETE FROM user_saved_plans WHERE id = ?
-    # Cascade deletes user_workout_plans if exists
-```
-
 ---
 
 ## Gemini API Integration
@@ -489,7 +473,6 @@ def get_rate_limit_key(request: Request) -> str:
 2. **Rate Limiting**: Per-user token hashing ensures fair quotas
 3. **CORS**: Whitelist specific origins with ALLOWED_ORIGINS env var
 4. **Connection Pooling**: Database uses connection pool via `get_conn()`
-5. **Plan Cache**: `plan_cache` table stores matched plans by user profile hash
 
 ---
 
@@ -520,9 +503,6 @@ backend/
 │   ├── base_analyzer.py - Base class for analyzers
 │   ├── user_image_analyzer.py (237) - Image analysis & plan generation
 │   ├── gemini_form_analyzer.py - Video form analysis (ACTIVE)
-│   ├── pushup_analyzer.py - Legacy (not used)
-│   ├── squat_analyzer.py - Legacy (not used)
-│   ├── shoulder_press_analyzer.py - Legacy (not used)
 │   └── __init__.py
 ├── outputs/ - Temporary video storage
 ├── static/ - Frontend files (index.html, app.js, styles.css)

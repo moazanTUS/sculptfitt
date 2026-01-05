@@ -56,13 +56,10 @@
 │  │  │  ┌─────────────────────────────────────────────────┐ │ │   │
 │  │  │  │  Business Logic                                │ │ │   │
 │  │  │  │  - user_plans.py (Plan CRUD)                 │ │ │   │
-│  │  │  │  - plan_api.py (Plan Matching/Selection)    │ │ │   │
-│  │  │  │  - plan_store.py (Plan Storage)             │ │ │   │
 │  │  │  │  - editable_plans.py (Plan Editing)         │ │ │   │
 │  │  │  │  - custom_workouts_api.py (Custom Plans)    │ │ │   │
 │  │  │  │  - workout_logging_api.py (Logging)         │ │ │   │
 │  │  │  │  - video_library_api.py (Exercise Videos)   │ │ │   │
-│  │  │  │  - plan_matcher.py (Plan Recommendation)    │ │ │   │
 │  │  │  └─────────────────────────────────────────────────┘ │ │   │
 │  │  │                                                       │ │   │
 │  │  │  ┌─────────────────────────────────────────────────┐ │ │   │
@@ -250,13 +247,10 @@ main.py (FastAPI App)
 │   ├── base_analyzer.py (Base class)
 │   ├── user_image_analyzer.py (Body type detection)
 │   │   ├── base_analyzer.py
-│   │   ├── MediaPipe (Pose detection)
-
+│   │   └── Gemini API
 │   ├── gemini_form_analyzer.py (AI form feedback)
 │   │   └── Gemini API
-│   ├── pushup_analyzer.py (Exercise-specific)
-│   ├── squat_analyzer.py
-│   └── shoulder_press_analyzer.py
+│   └── __init__.py
 └── static/ (Frontend)
     ├── index.html
     ├── app.js
