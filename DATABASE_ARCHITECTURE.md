@@ -7,6 +7,7 @@ erDiagram
     USERS ||--o{ USER_SAVED_PLANS : saves
     USERS ||--o{ USER_WORKOUT_PLANS : creates
     USERS ||--o{ CUSTOM_WORKOUTS : creates
+    USERS ||--o{ WORKOUT_SESSIONS : logs
     
     USER_SAVED_PLANS }o--|| WORKOUT_PLANS : references
     USER_WORKOUT_PLANS ||--o{ USER_WORKOUT_DAYS : contains
@@ -22,6 +23,11 @@ erDiagram
     PLAN_EXERCISES }o--|| EXERCISES : references
     
     EXERCISES ||--o{ EXERCISE_VIDEOS : has
+    
+    WORKOUT_SESSIONS ||--o{ WORKOUT_SESSION_EXERCISES : contains
+    WORKOUT_SESSION_EXERCISES }o--|| EXERCISES : references
+    
+    USERS ||--o{ WORKOUT_PROGRESS : tracks
     
     PLAN_CACHE ||--o{ WORKOUT_PLANS : stores
 ```
@@ -456,7 +462,123 @@ created_at: "2026-01-04 12:00:00"
 
 ---
 
-### plan_cache
+---
+
+### exercise_videos
+Video library for exercise references and tutorials.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | INT (PK) | Auto-increment |
+| exercise_id | INT (FK) | References exercises |
+| video_url | VARCHAR(255) | URL to video |
+| thumbnail_url | VARCHAR(255) | Thumbnail image URL |
+| title | VARCHAR(255) | Video title |
+| created_at | TIMESTAMP | Auto-generated |
+
+**Sample Row:**
+```
+id: 1
+exercise_id: 1
+video_url: "https://example.com/barbell-bench-press.mp4"
+thumbnail_url: "https://example.com/thumb.jpg"
+title: "Barbell Bench Press - Form Guide"
+created_at: "2025-12-01 10:30:00"
+```
+
+---
+
+### workout_sessions
+Logged workouts by users (performance history).
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | INT (PK) | Auto-increment |
+| clerk_user_id | VARCHAR(255) | User ID |
+| day_id | INT (FK) | References user_workout_day |
+| completed_at | TIMESTAMP | When workout was done |
+| created_at | TIMESTAMP | Auto-generated |
+
+**Sample Row:**
+```
+id: 1
+clerk_user_id: "user_123abc456def"
+day_id: 12
+completed_at: "2026-01-04 18:30:00"
+created_at: "2026-01-04 18:30:00"
+```
+
+---
+
+### workout_session_exercises
+Individual exercises logged in a workout session.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | INT (PK) | Auto-increment |
+| session_id | INT (FK) | References workout_sessions |
+| exercise_id | INT (FK) | References exercises |
+| actual_sets | INT | Sets actually completed |
+| actual_reps | INT | Reps actually completed |
+| difficulty_rating | INT | 1-10 difficulty rating |
+| notes | TEXT | User notes |
+| created_at | TIMESTAMP | Auto-generated |
+
+**Sample Row:**
+```
+id: 1
+session_id: 1
+exercise_id: 1
+actual_sets: 4
+actual_reps: 10
+difficulty_rating: 7
+notes: "Good form, could go heavier"
+created_at: "2026-01-04 18:30:00"
+```
+
+---
+
+### workout_progress
+User progress tracking and statistics.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | INT (PK) | Auto-increment |
+| clerk_user_id | VARCHAR(255) | User ID |
+| total_workouts | INT | Total workouts completed |
+| total_minutes | INT | Total minutes worked out |
+| current_streak | INT | Current workout streak days |
+| longest_streak | INT | Longest streak ever |
+| last_workout | TIMESTAMP | Last workout date |
+| updated_at | TIMESTAMP | Auto-updated |
+
+**Sample Row:**
+```
+id: 1
+clerk_user_id: "user_123abc456def"
+total_workouts: 24
+total_minutes: 1440
+current_streak: 5
+longest_streak: 12
+last_workout: "2026-01-04 18:30:00"
+updated_at: "2026-01-04 18:30:00"
+```
+
+---
+
+### migrations
+Schema version tracking (optional, for future migrations).
+
+| Column | Type | Notes |
+|--------|------|-------|
+| version | INT (PK) | Migration version number |
+| applied_at | TIMESTAMP | When migration was applied |
+
+**Sample Row:**
+```
+version: 1
+applied_at: "2025-12-01 00:00:00"
+```
 Performance optimization - caches matched plans by user profile hash.
 
 | Column | Type | Notes |
@@ -659,12 +781,18 @@ VALUES (12, 1, 4, '6-10', 90, 1);
 ```sql
 -- User completes day 1 workout
 INSERT INTO workout_sessions 
-(clerk_user_id, day_id, completed_at, actual_sets, actual_reps, difficulty_rating)
+(clerk_user_id, day_id, completed_at)
 VALUES 
-('user_123abc456def', 12, '2026-01-04 18:30:00', 4, 10, 7);
+('user_123abc456def', 12, '2026-01-04 18:30:00');
+
+-- Log individual exercises from the workout
+INSERT INTO workout_session_exercises
+(session_id, exercise_id, actual_sets, actual_reps, difficulty_rating)
+VALUES 
+(1, 1, 4, 10, 7);
 ```
 
-Saves performance data for progress tracking
+Saves performance data to workout_sessions and workout_session_exercises for progress tracking
 
 ---
 
