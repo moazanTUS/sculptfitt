@@ -44,31 +44,35 @@ with get_conn() as conn:
         cur.execute("SELECT * FROM exercises")
 ```
 
-### `user_plans.py` - Plan Management (170 lines)
+### `user_plans.py` - Plan Management
 Core functions for saving, listing, and retrieving plans.
 
 **Functions:**
-- `save_user_plan()` - Inserts into `user_saved_plans` table
-- `list_user_plans()` - Gets all AI-generated + custom plans for user
-- `get_saved_plan()` - Fetch single plan details
-- `delete_user_plan()` - Delete by plan type (ai_, custom_, saved_)
+- `save_user_plan()` - Inserts user-selected plan into `user_saved_plans` table
+- `list_user_plans()` - Gets all AI-generated plans + custom workouts for user
+- `get_saved_plan()` - Fetch single saved plan details
+- `delete_user_plan()` - Delete plan by composite ID type (ai_, custom_, saved_)
 
 **Key Logic:**
-- Composite IDs: `ai_123`, `custom_456`, `saved_789`
-- Distinguishes between saved pre-built plans and AI-generated plans
+- Composite IDs: `ai_123` (AI-generated), `custom_456` (user-created), `saved_789` (selected pre-built)
+- Returns lists merged and sorted by `created_at` DESC
 
-### `editable_plans.py` - Plan Editing
-Functions to modify workout plans.
+### `editable_plans.py` - Plan Editing (371 lines)
+Functions to modify workout plans. Handles creating editable copies from pre-built plans.
 
-**Functions:**
-- `ensure_editable_copy()` - Create editable copy from saved plan
+**Key Functions:**
+- `ensure_editable_copy()` - Gets or creates editable copy from saved plan in `user_workout_plans`
+- `get_editable_plan()` - Returns full plan structure with day/item IDs for frontend editing
 - `update_day_title()` - Change day name (e.g., "Chest Day")
-- `add_day_item()` - Add exercise to day
-- `update_day_item()` - Modify exercise (sets, reps, etc.)
+- `add_day_item()` - Add exercise to a specific day
+- `update_day_item()` - Modify exercise (sets, reps, rest time, notes)
 - `delete_day_item()` - Remove exercise from day
 - `reorder_day_items()` - Change exercise order in day
 
-### `analyzers/user_image_analyzer.py` - Image Analysis (237 lines)
+**Key Pattern:**
+- Clones from `workout_plans` → `plan_exercises` to `user_workout_plans` → `user_workout_days` → `user_workout_day_items`
+
+### `analyzers/user_image_analyzer.py` - Image Analysis
 Analyzes user photo to determine body type & generate personalized plan.
 
 **Flow:**

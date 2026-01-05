@@ -74,15 +74,20 @@
 │  ┌──────────────────────────────────────────────────────────┐   │
 │  │  MySQL Database (Railway or External)                   │   │
 │  │  Tables:                                                │   │
-│  │  - users (Clerk user data)                             │   │
-│  │  - user_saved_plans (Saved plans)                      │   │
-│  │  - user_workout_plans (AI-generated plans)             │   │
-│  │  - custom_workouts (User custom plans)                 │   │
-│  │  - plan_days (Workout days)                           │   │
-│  │  - plan_exercises (Exercise in day)                   │   │
-│  │  - exercises (Exercise catalog)                        │   │
+│  │  - exercises (Exercise library)                        │   │
+│  │  - workout_plans (Pre-built plan templates)            │   │
+│  │  - plan_exercises (Exercises in pre-built plans)       │   │
+│  │  - user_saved_plans (User-selected plans)              │   │
+│  │  - user_workout_plans (Editable plans)                 │   │
+│  │  - user_workout_days (Days in user plans)              │   │
+│  │  - user_workout_day_items (Exercises in days)          │   │
+│  │  - custom_workouts (User-created plans)                │   │
+│  │  - custom_workout_days (Days in custom plans)          │   │
+│  │  - custom_workout_exercises (Exercises in days)        │   │
 │  │  - exercise_videos (Video library)                     │   │
-│  │  - workout_sessions (Logged workouts)                 │   │
+│  │  - workout_sessions (Logged workout sessions)          │   │
+│  │  - workout_session_exercises (Logged exercises)        │   │
+│  │  - workout_progress (PRs and stats)                    │   │
 │  │  - migrations (Schema version tracking)                │   │
 │  └──────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘

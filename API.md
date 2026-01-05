@@ -67,20 +67,32 @@ curl -X POST http://localhost:8000/api/analyze-image-v2 \
 ```json
 {
   "success": true,
+  "type": "image_v2",
   "body_type": "mesomorph",
-  "focus_areas": ["upper_body", "core"],
-  "matched_plans": [
-    {
-      "plan_id": 1,
-      "name": "Upper Body Focus",
-      "body_type": "mesomorph",
-      "difficulty": "intermediate",
-      "duration_weeks": 8,
-      "days": 5
-    }
-  ],
-  "detected_posture": "good",
-  "symmetry_notes": "balanced development"
+  "primary_focus": "chest",
+  "secondary_focuses": ["back", "shoulders"],
+  "difficulty": "intermediate",
+  "rationale": "Detected lean build with narrow shoulders...",
+  "workout_plan": {
+    "days": [
+      {
+        "day": 1,
+        "focus": "Chest",
+        "exercises": [
+          {
+            "name": "Bench Press",
+            "muscle_group": "chest",
+            "reps": "6-12",
+            "sets": 3,
+            "rest_seconds": 90,
+            "form_tips": "Keep shoulder blades retracted..."
+          }
+        ]
+      }
+    ],
+    "days_per_week": 4,
+    "notes": "This plan is tailored for your body type..."
+  }
 }
 ```
 
