@@ -7,7 +7,7 @@
 CREATE TABLE IF NOT EXISTS exercises (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
-  primary_muscle VARCHAR(50) NOT NULL,
+  muscle_group VARCHAR(50),
   secondary_muscles JSON,
   difficulty ENUM('beginner', 'intermediate', 'advanced') NOT NULL,
   equipment VARCHAR(100),
@@ -20,8 +20,9 @@ CREATE TABLE IF NOT EXISTS exercises (
   rest_seconds INT DEFAULT 90,
   instructions TEXT,
   form_cues TEXT,
+  description TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  KEY idx_primary_muscle (primary_muscle),
+  KEY idx_muscle_group (muscle_group),
   KEY idx_difficulty (difficulty),
   UNIQUE KEY idx_name_difficulty (name, difficulty)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -147,7 +148,7 @@ CREATE TABLE IF NOT EXISTS plan_cache (
 -- ============================================
 -- Insert Sample Exercises
 -- ============================================
-INSERT INTO exercises (name, primary_muscle, secondary_muscles, difficulty, equipment, instructions, form_cues) VALUES
+INSERT INTO exercises (name, muscle_group, secondary_muscles, difficulty, equipment, instructions, form_cues) VALUES
 -- CHEST
 ('Barbell Bench Press', 'chest', '["triceps", "shoulders"]', 'intermediate', 'barbell', 'Lie flat on bench, grip shoulder-width, lower to chest, press up', 'Keep elbows 45 degrees, full chest contact'),
 ('Barbell Bench Press', 'chest', '["triceps", "shoulders"]', 'advanced', 'barbell', 'Lie flat on bench, grip shoulder-width, lower to chest, press up', 'Keep elbows 45 degrees, full chest contact'),

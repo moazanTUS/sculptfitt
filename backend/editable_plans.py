@@ -11,7 +11,7 @@ def _get_or_create_exercise(cur, name: str, muscle_group: str | None = None) -> 
         return int(row["id"])
 
     cur.execute(
-        "INSERT INTO exercises (name, primary_muscle, difficulty) VALUES (%s, %s, %s);",
+        "INSERT INTO exercises (name, muscle_group, difficulty) VALUES (%s, %s, %s);",
         (name, muscle_group or "custom", 'beginner'),
     )
     return int(cur.lastrowid)
@@ -186,7 +186,7 @@ def get_editable_plan(saved_id: int, clerk_user_id: str) -> dict[str, Any]:
                     SELECT uwdi.id AS item_id,
                            e.id AS exercise_id,
                            e.name AS exercise,
-                           e.primary_muscle,
+                           e.muscle_group,
                            uwdi.sets, uwdi.reps, uwdi.rest_seconds, uwdi.position, uwdi.notes
                     FROM user_workout_day_items uwdi
                     JOIN exercises e ON e.id = uwdi.exercise_id
