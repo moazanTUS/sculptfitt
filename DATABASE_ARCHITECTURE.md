@@ -500,14 +500,49 @@ Pre-built workout templates that users can browse and select.
    exercises → exercise_videos
    ```
 
+## Two Workout Storage Systems
+
+SculpFit has **two separate table structures** for storing workout plans:
+
+### 1. User Workout Tables (AI/Pre-built plans)
+Used for AI-generated plans and when users save pre-built plans:
+- `user_workout_plans` - Plan metadata
+- `user_workout_days` - Days in the plan
+- `user_workout_day_items` - Exercises (references `exercises.id`)
+
+**Plan ID prefix**: `ai_` or `saved_`
+
+### 2. Custom Workout Tables
+Used for user-created custom workouts:
+- `custom_workouts` - Plan metadata
+- `custom_workout_days` - Days in the plan
+- `custom_workout_exercises` - Exercises (stores `exercise_name` directly)
+
+**Plan ID prefix**: `custom_`
+
+### Editing Implications
+
+**IMPORTANT**: Item IDs can overlap between the two systems (e.g., both can have item_id=10). When editing:
+
+1. The frontend passes `item_type` in PATCH requests:
+   - `item_type: "custom"` → Updates `custom_workout_exercises`
+   - `item_type: "user"` → Updates `user_workout_day_items`
+
+2. The `editable_plans.py` module handles both table types in:
+   - `update_day_title()` - Checks both day tables
+   - `add_day_item()` - Inserts into correct table based on day type
+   - `update_day_item()` - Uses `item_type` parameter to target correct table
+   - `delete_day_item()` - Tries both tables if item_type not specified
+
 ## Active vs Inactive Components
 
-### ✅ Tables Present in Live Database (14 total)
+### ✅ Tables Present in Live Database (15 total)
 | Table | Used By | Purpose |
 |-------|---------|---------|
 | `exercises` | All features | Central exercise catalog |
 | `workout_plans` | `/api/available-plans`, `/api/plans/{id}` | Pre-built plan templates |
 | `plan_exercises` | `/api/plans/{id}`, `ensure_editable_copy()` | Exercises in pre-built plans |
+| `user_saved_plans` | `/api/my-plans`, `/api/select-plan` | Links users to saved plans |
 | `user_workout_plans` | AI analysis, plan selection | User's editable/generated plans |
 | `user_workout_days` | Plan editing | Days within user plans |
 | `user_workout_day_items` | Plan editing | Exercises in user plan days |
@@ -519,9 +554,6 @@ Pre-built workout templates that users can browse and select.
 | `workout_progress` | Progress tracking | PRs and exercise statistics |
 | `exercise_videos` | Video library | Exercise demonstration videos |
 | `migrations` | Internal | Schema version tracking |
-
-### ❌ NOT Present in Live Database
-- **`user_saved_plans`** - Defined in init_database.sql but NOT created in live database. Code references this table but it needs to be created if saving pre-built plans is needed.
 
 ### ⚠️ Code Files Present but Not Active
 - `pushup_analyzer.py` (exists but not imported/used in main.py)

@@ -57,20 +57,39 @@ Core functions for saving, listing, and retrieving plans.
 - Composite IDs: `ai_123` (AI-generated), `custom_456` (user-created), `saved_789` (selected pre-built)
 - Returns lists merged and sorted by `created_at` DESC
 
-### `editable_plans.py` - Plan Editing (371 lines)
-Functions to modify workout plans. Handles creating editable copies from pre-built plans.
+### `editable_plans.py` - Plan Editing (~530 lines)
+Functions to modify workout plans. Handles creating editable copies from pre-built plans and editing both user and custom workouts.
 
 **Key Functions:**
 - `ensure_editable_copy()` - Gets or creates editable copy from saved plan in `user_workout_plans`
 - `get_editable_plan()` - Returns full plan structure with day/item IDs for frontend editing
-- `update_day_title()` - Change day name (e.g., "Chest Day")
-- `add_day_item()` - Add exercise to a specific day
-- `update_day_item()` - Modify exercise (sets, reps, rest time, notes)
-- `delete_day_item()` - Remove exercise from day
+- `update_day_title(user_day_id, clerk_user_id, title)` - Change day name (checks both `user_workout_days` and `custom_workout_days`)
+- `add_day_item(...)` - Add exercise to a specific day (handles both user and custom workout tables)
+- `update_day_item(item_id, clerk_user_id, patch, item_type=None)` - Modify exercise (uses `item_type` to target correct table)
+- `delete_day_item(item_id, clerk_user_id)` - Remove exercise from day (tries both tables)
 - `reorder_day_items()` - Change exercise order in day
 
 **Key Pattern:**
 - Clones from `workout_plans` → `plan_exercises` to `user_workout_plans` → `user_workout_days` → `user_workout_day_items`
+
+**Two Table Systems:**
+The editing functions handle TWO different table structures:
+
+1. **User Workouts** (`user_workout_*` tables):
+   - Used for AI-generated and pre-built plans
+   - `user_workout_day_items` references `exercises.id`
+   - Plan IDs prefixed with `ai_` or `saved_`
+
+2. **Custom Workouts** (`custom_workout_*` tables):
+   - Used for user-created custom workouts
+   - `custom_workout_exercises` stores `exercise_name` directly
+   - Plan IDs prefixed with `custom_`
+
+**item_type Parameter:**
+Since item IDs can overlap between tables (both can have item_id=10), the `update_day_item()` function accepts an optional `item_type` parameter:
+- `item_type="custom"` → Only searches `custom_workout_exercises`
+- `item_type="user"` → Only searches `user_workout_day_items`
+- `item_type=None` → Falls back to checking user tables first, then custom
 
 ### `analyzers/user_image_analyzer.py` - Image Analysis
 Analyzes user photo to determine body type & generate personalized plan.

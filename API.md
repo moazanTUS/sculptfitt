@@ -283,6 +283,69 @@ Delete a saved plan.
 
 ## Plan Editing
 
+### Get Editable Plan
+**GET** `/api/my-plans/{saved_id}/editable`
+
+Get the full editable version of a plan with all day and item IDs needed for editing.
+
+**Rate Limit**: 60 requests/minute
+
+**Path Parameters**:
+- `saved_id`: Composite ID like `custom_9`, `ai_27`, or `saved_123`
+
+**Response** (200):
+```json
+{
+  "plan": {
+    "id": 5,
+    "name": "Custom Chest Routine",
+    "days_per_week": 4,
+    "primary_focus": "chest"
+  },
+  "days": [
+    {
+      "day_id": 14,
+      "day": 1,
+      "title": "Chest Day",
+      "items": [
+        {
+          "item_id": 42,
+          "exercise_id": 5,
+          "exercise": "Bench Press",
+          "muscle_group": "chest",
+          "sets": 4,
+          "reps": "6-8",
+          "rest_seconds": 90,
+          "position": 10,
+          "notes": null
+        }
+      ]
+    }
+  ]
+}
+```
+
+### Update Day Title
+**PATCH** `/api/edit/days/{day_id}`
+
+Update the title of a workout day.
+
+**Rate Limit**: 60 requests/minute
+
+**Request**:
+```json
+{
+  "title": "Heavy Chest Day"
+}
+```
+
+**Response** (200):
+```json
+{
+  "success": true
+}
+```
+
 ### Add Exercise to Plan Day
 **POST** `/api/edit/days/{day_id}/items`
 
@@ -293,10 +356,11 @@ Add an exercise to a specific day.
 **Request**:
 ```json
 {
-  "exercise_id": 5,
+  "exercise_name": "Incline Dumbbell Press",
+  "muscle_group": "chest",
   "sets": 3,
-  "reps": "10",
-  "rest_seconds": 90
+  "reps": "10-12",
+  "rest_seconds": 60
 }
 ```
 
@@ -304,8 +368,7 @@ Add an exercise to a specific day.
 ```json
 {
   "success": true,
-  "item_id": 42,
-  "message": "Exercise added"
+  "item_id": 43
 }
 ```
 
@@ -319,29 +382,45 @@ Remove an exercise from a plan day.
 **Response** (200):
 ```json
 {
-  "success": true,
-  "message": "Exercise removed"
+  "success": true
 }
 ```
 
 ### Update Exercise in Plan
-**PUT** `/api/edit/items/{item_id}`
+**PATCH** `/api/edit/items/{item_id}`
 
-Update sets/reps for an exercise in a plan.
+Update an exercise in a plan day. Works for both user workout plans and custom workouts.
+
+**Rate Limit**: 60 requests/minute
 
 **Request**:
 ```json
 {
+  "exercise_name": "Incline Bench Press",
   "sets": 4,
-  "reps": "6-8"
+  "reps": "6-8",
+  "rest_seconds": 90,
+  "notes": "Focus on upper chest",
+  "item_type": "custom"
 }
 ```
+
+**Parameters**:
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| exercise_name | string | No | New exercise name |
+| sets | int | No | Number of sets |
+| reps | string | No | Rep range (e.g., "8-12") |
+| rest_seconds | int | No | Rest time in seconds |
+| notes | string | No | Optional notes |
+| item_type | string | **Recommended** | `"custom"` or `"user"` - specifies which table to update |
+
+**Note**: The `item_type` field is important when item IDs might overlap between `user_workout_day_items` and `custom_workout_exercises` tables. Pass `"custom"` when editing custom workouts (plans with `custom_` prefix) and `"user"` for AI-generated or pre-built plans.
 
 **Response** (200):
 ```json
 {
-  "success": true,
-  "message": "Exercise updated"
+  "success": true
 }
 ```
 
