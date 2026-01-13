@@ -195,6 +195,7 @@ class ItemPatchBody(BaseModel):
     reps: str | None = None
     rest_seconds: int | None = None
     notes: str | None = None
+    item_type: str | None = None  # 'custom' or 'user' to specify which table
 
 
 class ReorderBody(BaseModel):
@@ -744,8 +745,9 @@ async def add_item(request: Request, user_day_id: int, body: AddItemBody, user=D
 def patch_item(item_id: int, body: ItemPatchBody, user=Depends(current_user)):
     try:
         patch_data = body.model_dump(exclude_none=True)
-        print(f"[PATCH ITEM] item_id={item_id}, user={user['clerk_user_id']}, patch_data={patch_data}")
-        update_day_item(item_id, user["clerk_user_id"], patch_data)
+        item_type = patch_data.pop('item_type', None)  # Extract item_type before passing
+        print(f"[PATCH ITEM] item_id={item_id}, user={user['clerk_user_id']}, item_type={item_type}, patch_data={patch_data}")
+        update_day_item(item_id, user["clerk_user_id"], patch_data, item_type=item_type)
         return {"success": True}
     except Exception as e:
         print(f"[PATCH ITEM ERROR] {e}")

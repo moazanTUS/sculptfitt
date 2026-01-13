@@ -323,7 +323,7 @@ def add_day_item(
                 return int(cur.lastrowid)
 
 
-def update_day_item(item_id: int, clerk_user_id: str, patch: dict[str, Any]) -> None:
+def update_day_item(item_id: int, clerk_user_id: str, patch: dict[str, Any], item_type: str | None = None) -> None:
     allowed = {"exercise_name", "muscle_group", "sets", "reps", "rest_seconds", "notes"}
     patch = {k: v for k, v in patch.items() if k in allowed}
     if not patch:
@@ -331,23 +331,11 @@ def update_day_item(item_id: int, clerk_user_id: str, patch: dict[str, Any]) -> 
 
     with get_conn() as conn:
         with conn.cursor() as cur:
-            # Try to find in user_workout_day_items first
-            cur.execute(
-                """
-                SELECT uwdi.id, uwdi.exercise_id, 'user' as item_type
-                FROM user_workout_day_items uwdi
-                JOIN user_workout_days d ON d.id=uwdi.user_day_id
-                JOIN user_workout_plans p ON p.id=d.user_plan_id
-                WHERE uwdi.id=%s AND p.clerk_user_id=%s
-                LIMIT 1;
-                """,
-                (item_id, clerk_user_id),
-            )
-            row = cur.fetchone()
-            item_type = 'user'
+            row = None
+            detected_type = item_type  # Use provided type if available
             
-            # If not found, try custom_workout_exercises
-            if not row:
+            # If item_type is specified, only search that table
+            if item_type == 'custom':
                 cur.execute(
                     """
                     SELECT cwe.id, cwe.exercise_name, 'custom' as item_type
@@ -360,12 +348,57 @@ def update_day_item(item_id: int, clerk_user_id: str, patch: dict[str, Any]) -> 
                     (item_id, clerk_user_id),
                 )
                 row = cur.fetchone()
-                item_type = 'custom'
+                detected_type = 'custom'
+            elif item_type == 'user':
+                cur.execute(
+                    """
+                    SELECT uwdi.id, uwdi.exercise_id, 'user' as item_type
+                    FROM user_workout_day_items uwdi
+                    JOIN user_workout_days d ON d.id=uwdi.user_day_id
+                    JOIN user_workout_plans p ON p.id=d.user_plan_id
+                    WHERE uwdi.id=%s AND p.clerk_user_id=%s
+                    LIMIT 1;
+                    """,
+                    (item_id, clerk_user_id),
+                )
+                row = cur.fetchone()
+                detected_type = 'user'
+            else:
+                # Fallback: try user_workout_day_items first, then custom
+                cur.execute(
+                    """
+                    SELECT uwdi.id, uwdi.exercise_id, 'user' as item_type
+                    FROM user_workout_day_items uwdi
+                    JOIN user_workout_days d ON d.id=uwdi.user_day_id
+                    JOIN user_workout_plans p ON p.id=d.user_plan_id
+                    WHERE uwdi.id=%s AND p.clerk_user_id=%s
+                    LIMIT 1;
+                    """,
+                    (item_id, clerk_user_id),
+                )
+                row = cur.fetchone()
+                detected_type = 'user'
+                
+                # If not found, try custom_workout_exercises
+                if not row:
+                    cur.execute(
+                        """
+                        SELECT cwe.id, cwe.exercise_name, 'custom' as item_type
+                        FROM custom_workout_exercises cwe
+                        JOIN custom_workout_days d ON d.id=cwe.custom_day_id
+                        JOIN custom_workouts cw ON cw.id=d.custom_workout_id
+                        WHERE cwe.id=%s AND cw.clerk_user_id=%s
+                        LIMIT 1;
+                        """,
+                        (item_id, clerk_user_id),
+                    )
+                    row = cur.fetchone()
+                    detected_type = 'custom'
             
             if not row:
                 raise ValueError("Item not found")
 
-            if item_type == 'custom':
+            if detected_type == 'custom':
                 # Update custom workout exercise (different table structure)
                 update_fields = []
                 update_values = []

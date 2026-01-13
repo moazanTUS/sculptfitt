@@ -621,6 +621,8 @@
 
       (d.items || []).forEach(it => {
         const itemId = it.item_id ?? it.id;
+        // Determine item_type from savedId prefix
+        const item_type = savedId.startsWith('custom_') ? 'custom' : 'user';
 
         document.getElementById(`save-item-${itemId}`).onclick = async () => {
           try {
@@ -631,7 +633,7 @@
 
             await api(`/api/edit/items/${itemId}`, {
               method: "PATCH",
-              body: JSON.stringify({ exercise_name, sets, reps, rest_seconds }),
+              body: JSON.stringify({ exercise_name, sets, reps, rest_seconds, item_type }),
             });
             alert("Saved");
             await openPlan(savedId);
