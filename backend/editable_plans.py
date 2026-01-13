@@ -279,6 +279,7 @@ def update_day_item(item_id: int, clerk_user_id: str, patch: dict[str, Any]) -> 
 
     with get_conn() as conn:
         with conn.cursor() as cur:
+            # Verify item belongs to user
             cur.execute(
                 """
                 SELECT uwdi.id, uwdi.exercise_id
@@ -302,25 +303,43 @@ def update_day_item(item_id: int, clerk_user_id: str, patch: dict[str, Any]) -> 
                     patch.get("muscle_group"),
                 )
 
-            cur.execute(
-                """
-                UPDATE user_workout_day_items
-                SET exercise_id=%s,
-                    sets=COALESCE(%s, sets),
-                    reps=COALESCE(%s, reps),
-                    rest_seconds=COALESCE(%s, rest_seconds),
-                    notes=COALESCE(%s, notes)
-                WHERE id=%s;
-                """,
-                (
-                    exercise_id,
-                    patch.get("sets"),
-                    patch.get("reps"),
-                    patch.get("rest_seconds"),
-                    patch.get("notes"),
-                    item_id,
-                ),
-            )
+            # Build dynamic UPDATE statement only for provided fields
+            update_fields = []
+            update_values = []
+            
+            if "exercise_name" in patch or patch.get("exercise_id"):
+                update_fields.append("exercise_id=%s")
+                update_values.append(exercise_id)
+            
+            if "sets" in patch:
+                update_fields.append("sets=%s")
+                update_values.append(patch.get("sets"))
+            
+            if "reps" in patch:
+                update_fields.append("reps=%s")
+                update_values.append(patch.get("reps"))
+            
+            if "rest_seconds" in patch:
+                update_fields.append("rest_seconds=%s")
+                update_values.append(patch.get("rest_seconds"))
+            
+            if "notes" in patch:
+                update_fields.append("notes=%s")
+                update_values.append(patch.get("notes"))
+            
+            if not update_fields:
+                # If no valid fields to update, still update exercise_id to the one we looked up
+                update_fields.append("exercise_id=%s")
+                update_values.append(exercise_id)
+            
+            update_values.append(item_id)
+            
+            update_sql = f"UPDATE user_workout_day_items SET {', '.join(update_fields)} WHERE id=%s;"
+            
+            cur.execute(update_sql, tuple(update_values))
+            
+            if cur.rowcount == 0:
+                raise ValueError("Failed to update item - no rows affected")
 
 
 def delete_day_item(item_id: int, clerk_user_id: str) -> None:
