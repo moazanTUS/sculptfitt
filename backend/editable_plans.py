@@ -393,7 +393,10 @@ def update_day_item(item_id: int, clerk_user_id: str, patch: dict[str, Any]) -> 
                 if update_fields:
                     update_values.append(item_id)
                     update_sql = f"UPDATE custom_workout_exercises SET {', '.join(update_fields)} WHERE id=%s;"
+                    print(f"[UPDATE CUSTOM] SQL: {update_sql}, values: {tuple(update_values)}")
                     cur.execute(update_sql, tuple(update_values))
+                    conn.commit()  # Explicit commit
+                    print(f"[UPDATE CUSTOM] rowcount: {cur.rowcount}")
                     
                     if cur.rowcount == 0:
                         raise ValueError("Failed to update custom exercise")
@@ -434,7 +437,10 @@ def update_day_item(item_id: int, clerk_user_id: str, patch: dict[str, Any]) -> 
                 if update_fields:
                     update_values.append(item_id)
                     update_sql = f"UPDATE user_workout_day_items SET {', '.join(update_fields)} WHERE id=%s;"
+                    print(f"[UPDATE USER] SQL: {update_sql}, values: {tuple(update_values)}")
                     cur.execute(update_sql, tuple(update_values))
+                    conn.commit()  # Explicit commit
+                    print(f"[UPDATE USER] rowcount: {cur.rowcount}")
                     
                     if cur.rowcount == 0:
                         raise ValueError("Failed to update item - no rows affected")
