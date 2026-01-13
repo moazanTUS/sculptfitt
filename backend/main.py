@@ -743,9 +743,12 @@ async def add_item(request: Request, user_day_id: int, body: AddItemBody, user=D
 @app.patch("/api/edit/items/{item_id}")
 def patch_item(item_id: int, body: ItemPatchBody, user=Depends(current_user)):
     try:
-        update_day_item(item_id, user["clerk_user_id"], body.model_dump())
+        patch_data = body.model_dump(exclude_none=True)
+        print(f"[PATCH ITEM] item_id={item_id}, user={user['clerk_user_id']}, patch_data={patch_data}")
+        update_day_item(item_id, user["clerk_user_id"], patch_data)
         return {"success": True}
     except Exception as e:
+        print(f"[PATCH ITEM ERROR] {e}")
         return JSONResponse(status_code=400, content={"success": False, "error": str(e)})
 
 
