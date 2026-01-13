@@ -212,12 +212,26 @@ def get_editable_plan(saved_id: int, clerk_user_id: str) -> dict[str, Any]:
 def update_day_title(user_day_id: int, clerk_user_id: str, title: str) -> None:
     with get_conn() as conn:
         with conn.cursor() as cur:
+            # Try user_workout_days first
             cur.execute(
                 """
                 UPDATE user_workout_days d
                 JOIN user_workout_plans p ON p.id = d.user_plan_id
                 SET d.title=%s
                 WHERE d.id=%s AND p.clerk_user_id=%s;
+                """,
+                (title, user_day_id, clerk_user_id),
+            )
+            if cur.rowcount > 0:
+                return
+            
+            # Try custom_workout_days if not found in user tables
+            cur.execute(
+                """
+                UPDATE custom_workout_days d
+                JOIN custom_workouts cw ON cw.id = d.custom_workout_id
+                SET d.title=%s
+                WHERE d.id=%s AND cw.clerk_user_id=%s;
                 """,
                 (title, user_day_id, clerk_user_id),
             )
@@ -237,10 +251,10 @@ def add_day_item(
 ) -> int:
     with get_conn() as conn:
         with conn.cursor() as cur:
-            # Ensure day belongs to user
+            # First try user_workout_days
             cur.execute(
                 """
-                SELECT d.id
+                SELECT d.id, 'user' as day_type
                 FROM user_workout_days d
                 JOIN user_workout_plans p ON p.id=d.user_plan_id
                 WHERE d.id=%s AND p.clerk_user_id=%s
@@ -248,27 +262,65 @@ def add_day_item(
                 """,
                 (user_day_id, clerk_user_id),
             )
-            if not cur.fetchone():
+            row = cur.fetchone()
+            day_type = 'user'
+            
+            # If not found, try custom_workout_days
+            if not row:
+                cur.execute(
+                    """
+                    SELECT d.id, 'custom' as day_type
+                    FROM custom_workout_days d
+                    JOIN custom_workouts cw ON cw.id=d.custom_workout_id
+                    WHERE d.id=%s AND cw.clerk_user_id=%s
+                    LIMIT 1;
+                    """,
+                    (user_day_id, clerk_user_id),
+                )
+                row = cur.fetchone()
+                day_type = 'custom'
+            
+            if not row:
                 raise ValueError("Day not found")
 
-            ex_id = _get_or_create_exercise(cur, exercise_name, muscle_group)
+            if day_type == 'custom':
+                # Add to custom_workout_exercises
+                cur.execute(
+                    "SELECT COALESCE(MAX(position), 0) AS m FROM custom_workout_exercises WHERE custom_day_id=%s;",
+                    (user_day_id,),
+                )
+                m = int(cur.fetchone()["m"] or 0)
+                pos = m + 10
 
-            cur.execute(
-                "SELECT COALESCE(MAX(position), 0) AS m FROM user_workout_day_items WHERE user_day_id=%s;",
-                (user_day_id,),
-            )
-            m = int(cur.fetchone()["m"] or 0)
-            pos = m + 10
+                cur.execute(
+                    """
+                    INSERT INTO custom_workout_exercises
+                      (custom_day_id, exercise_name, sets, reps, rest_seconds, position)
+                    VALUES (%s, %s, %s, %s, %s, %s);
+                    """,
+                    (user_day_id, exercise_name, int(sets), str(reps), int(rest_seconds), pos),
+                )
+                return int(cur.lastrowid)
+            else:
+                # Add to user_workout_day_items
+                ex_id = _get_or_create_exercise(cur, exercise_name, muscle_group)
 
-            cur.execute(
-                """
-                INSERT INTO user_workout_day_items
-                  (user_day_id, exercise_id, sets, reps, rest_seconds, position)
-                VALUES (%s, %s, %s, %s, %s, %s);
-                """,
-                (user_day_id, ex_id, int(sets), str(reps), int(rest_seconds), pos),
-            )
-            return int(cur.lastrowid)
+                cur.execute(
+                    "SELECT COALESCE(MAX(position), 0) AS m FROM user_workout_day_items WHERE user_day_id=%s;",
+                    (user_day_id,),
+                )
+                m = int(cur.fetchone()["m"] or 0)
+                pos = m + 10
+
+                cur.execute(
+                    """
+                    INSERT INTO user_workout_day_items
+                      (user_day_id, exercise_id, sets, reps, rest_seconds, position)
+                    VALUES (%s, %s, %s, %s, %s, %s);
+                    """,
+                    (user_day_id, ex_id, int(sets), str(reps), int(rest_seconds), pos),
+                )
+                return int(cur.lastrowid)
 
 
 def update_day_item(item_id: int, clerk_user_id: str, patch: dict[str, Any]) -> None:
@@ -279,10 +331,10 @@ def update_day_item(item_id: int, clerk_user_id: str, patch: dict[str, Any]) -> 
 
     with get_conn() as conn:
         with conn.cursor() as cur:
-            # Verify item belongs to user
+            # Try to find in user_workout_day_items first
             cur.execute(
                 """
-                SELECT uwdi.id, uwdi.exercise_id
+                SELECT uwdi.id, uwdi.exercise_id, 'user' as item_type
                 FROM user_workout_day_items uwdi
                 JOIN user_workout_days d ON d.id=uwdi.user_day_id
                 JOIN user_workout_plans p ON p.id=d.user_plan_id
@@ -292,59 +344,106 @@ def update_day_item(item_id: int, clerk_user_id: str, patch: dict[str, Any]) -> 
                 (item_id, clerk_user_id),
             )
             row = cur.fetchone()
+            item_type = 'user'
+            
+            # If not found, try custom_workout_exercises
+            if not row:
+                cur.execute(
+                    """
+                    SELECT cwe.id, cwe.exercise_name, 'custom' as item_type
+                    FROM custom_workout_exercises cwe
+                    JOIN custom_workout_days d ON d.id=cwe.custom_day_id
+                    JOIN custom_workouts cw ON cw.id=d.custom_workout_id
+                    WHERE cwe.id=%s AND cw.clerk_user_id=%s
+                    LIMIT 1;
+                    """,
+                    (item_id, clerk_user_id),
+                )
+                row = cur.fetchone()
+                item_type = 'custom'
+            
             if not row:
                 raise ValueError("Item not found")
 
-            exercise_id = int(row["exercise_id"])
-            if patch.get("exercise_name") is not None:
-                exercise_id = _get_or_create_exercise(
-                    cur,
-                    str(patch["exercise_name"]),
-                    patch.get("muscle_group"),
-                )
+            if item_type == 'custom':
+                # Update custom workout exercise (different table structure)
+                update_fields = []
+                update_values = []
+                
+                if "exercise_name" in patch:
+                    update_fields.append("exercise_name=%s")
+                    update_values.append(patch.get("exercise_name"))
+                
+                if "sets" in patch:
+                    update_fields.append("sets=%s")
+                    update_values.append(patch.get("sets"))
+                
+                if "reps" in patch:
+                    update_fields.append("reps=%s")
+                    update_values.append(patch.get("reps"))
+                
+                if "rest_seconds" in patch:
+                    update_fields.append("rest_seconds=%s")
+                    update_values.append(patch.get("rest_seconds"))
+                
+                if "notes" in patch:
+                    update_fields.append("notes=%s")
+                    update_values.append(patch.get("notes"))
+                
+                if update_fields:
+                    update_values.append(item_id)
+                    update_sql = f"UPDATE custom_workout_exercises SET {', '.join(update_fields)} WHERE id=%s;"
+                    cur.execute(update_sql, tuple(update_values))
+                    
+                    if cur.rowcount == 0:
+                        raise ValueError("Failed to update custom exercise")
+            else:
+                # Update user workout item (uses exercise_id from exercises table)
+                exercise_id = int(row["exercise_id"])
+                if patch.get("exercise_name") is not None:
+                    exercise_id = _get_or_create_exercise(
+                        cur,
+                        str(patch["exercise_name"]),
+                        patch.get("muscle_group"),
+                    )
 
-            # Build dynamic UPDATE statement only for provided fields
-            update_fields = []
-            update_values = []
-            
-            if "exercise_name" in patch or patch.get("exercise_id"):
-                update_fields.append("exercise_id=%s")
-                update_values.append(exercise_id)
-            
-            if "sets" in patch:
-                update_fields.append("sets=%s")
-                update_values.append(patch.get("sets"))
-            
-            if "reps" in patch:
-                update_fields.append("reps=%s")
-                update_values.append(patch.get("reps"))
-            
-            if "rest_seconds" in patch:
-                update_fields.append("rest_seconds=%s")
-                update_values.append(patch.get("rest_seconds"))
-            
-            if "notes" in patch:
-                update_fields.append("notes=%s")
-                update_values.append(patch.get("notes"))
-            
-            if not update_fields:
-                # If no valid fields to update, still update exercise_id to the one we looked up
-                update_fields.append("exercise_id=%s")
-                update_values.append(exercise_id)
-            
-            update_values.append(item_id)
-            
-            update_sql = f"UPDATE user_workout_day_items SET {', '.join(update_fields)} WHERE id=%s;"
-            
-            cur.execute(update_sql, tuple(update_values))
-            
-            if cur.rowcount == 0:
-                raise ValueError("Failed to update item - no rows affected")
+                # Build dynamic UPDATE statement only for provided fields
+                update_fields = []
+                update_values = []
+                
+                if "exercise_name" in patch:
+                    update_fields.append("exercise_id=%s")
+                    update_values.append(exercise_id)
+                
+                if "sets" in patch:
+                    update_fields.append("sets=%s")
+                    update_values.append(patch.get("sets"))
+                
+                if "reps" in patch:
+                    update_fields.append("reps=%s")
+                    update_values.append(patch.get("reps"))
+                
+                if "rest_seconds" in patch:
+                    update_fields.append("rest_seconds=%s")
+                    update_values.append(patch.get("rest_seconds"))
+                
+                if "notes" in patch:
+                    update_fields.append("notes=%s")
+                    update_values.append(patch.get("notes"))
+                
+                if update_fields:
+                    update_values.append(item_id)
+                    update_sql = f"UPDATE user_workout_day_items SET {', '.join(update_fields)} WHERE id=%s;"
+                    cur.execute(update_sql, tuple(update_values))
+                    
+                    if cur.rowcount == 0:
+                        raise ValueError("Failed to update item - no rows affected")
 
 
 def delete_day_item(item_id: int, clerk_user_id: str) -> None:
     with get_conn() as conn:
         with conn.cursor() as cur:
+            # Try user_workout_day_items first
             cur.execute(
                 """
                 DELETE uwdi
@@ -352,6 +451,20 @@ def delete_day_item(item_id: int, clerk_user_id: str) -> None:
                 JOIN user_workout_days d ON d.id=uwdi.user_day_id
                 JOIN user_workout_plans p ON p.id=d.user_plan_id
                 WHERE uwdi.id=%s AND p.clerk_user_id=%s;
+                """,
+                (item_id, clerk_user_id),
+            )
+            if cur.rowcount > 0:
+                return
+            
+            # Try custom_workout_exercises if not found
+            cur.execute(
+                """
+                DELETE cwe
+                FROM custom_workout_exercises cwe
+                JOIN custom_workout_days d ON d.id=cwe.custom_day_id
+                JOIN custom_workouts cw ON cw.id=d.custom_workout_id
+                WHERE cwe.id=%s AND cw.clerk_user_id=%s;
                 """,
                 (item_id, clerk_user_id),
             )
