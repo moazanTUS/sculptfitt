@@ -186,7 +186,7 @@ def get_editable_plan(saved_id: int, clerk_user_id: str) -> dict[str, Any]:
                     SELECT uwdi.id AS item_id,
                            e.id AS exercise_id,
                            e.name AS exercise,
-                           e.muscle_group,
+                           e.primary_muscle,
                            uwdi.sets, uwdi.reps, uwdi.rest_seconds, uwdi.position, uwdi.notes
                     FROM user_workout_day_items uwdi
                     JOIN exercises e ON e.id = uwdi.exercise_id
