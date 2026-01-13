@@ -301,7 +301,7 @@ def get_plan_details(plan_id: int):
                 # Get exercises for pre-built plans using plan_exercises
                 cur.execute(
                     """
-                    SELECT pe.day_number as day, ex.name as exercise, ex.muscle_group, 
+                    SELECT pe.day_number as day, ex.name as exercise, ex.primary_muscle, 
                            pe.sets, pe.reps, pe.rest_seconds
                     FROM plan_exercises pe
                     LEFT JOIN exercises ex ON pe.exercise_id = ex.id
@@ -323,7 +323,7 @@ def get_plan_details(plan_id: int):
                     if row.get("exercise"):
                         days_dict[day_num]["items"].append({
                             "exercise": row.get("exercise"),
-                            "muscle_group": row.get("muscle_group"),
+                            "muscle_group": row.get("primary_muscle"),
                             "sets": row.get("sets"),
                             "reps": row.get("reps"),
                             "rest_seconds": row.get("rest_seconds")
@@ -496,7 +496,7 @@ async def analyze_image_v2(
                                 else:
                                     # Create new exercise if it doesn't exist
                                     cur.execute(
-                                        """INSERT INTO exercises (name, muscle_group, difficulty)
+                                        """INSERT INTO exercises (name, primary_muscle, difficulty)
                                            VALUES (%s, %s, %s)""",
                                         (ex_name, ex.get('muscle_group', 'chest'), difficulty)
                                     )
@@ -654,7 +654,7 @@ def _get_editable_payload(saved_id: str, clerk_user_id: str):
                     """
                     SELECT uwdi.id AS item_id,
                            e.name AS exercise,
-                           e.muscle_group,
+                           e.primary_muscle,
                            uwdi.sets, uwdi.reps, uwdi.rest_seconds, uwdi.position, uwdi.notes
                     FROM user_workout_day_items uwdi
                     JOIN exercises e ON e.id = uwdi.exercise_id
@@ -1103,7 +1103,7 @@ async def export_plan_csv(
                         cur.execute(
                             """
                             SELECT uwdi.sets, uwdi.reps, uwdi.rest_seconds, uwdi.notes,
-                                   e.name AS exercise, e.muscle_group
+                                   e.name AS exercise, e.primary_muscle
                             FROM user_workout_day_items uwdi
                             JOIN exercises e ON e.id = uwdi.exercise_id
                             WHERE uwdi.user_day_id = %s
