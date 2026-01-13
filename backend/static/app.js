@@ -634,6 +634,7 @@
               body: JSON.stringify({ exercise_name, sets, reps, rest_seconds }),
             });
             alert("Saved");
+            await openPlan(savedId);
           } catch (e) {
             alert(e.message);
           }
