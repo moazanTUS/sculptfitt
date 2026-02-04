@@ -56,21 +56,6 @@ jobs:
         run: |
           mysql -h 127.0.0.1 -P 3306 -u root -ptestpassword sculpfit_test < init_database.sql
 
-      - name: Set up test database
-        env:
-          DB_HOST: ${{ secrets.DB_HOST }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASS: ${{ secrets.DB_PASS }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_PORT: ${{ secrets.DB_PORT }}
-        run: |
-          mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" -e "CREATE DATABASE IF NOT EXISTS $DB_NAME;"
-          mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" < init_database.sql
-          for migration in migrations/*.sql; do
-            echo "Running migration: $migration"
-            mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" < "$migration" || true
-          done
-
       - name: Run unit tests
         env:
           # Database from GitHub Secrets
