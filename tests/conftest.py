@@ -65,22 +65,26 @@ def mock_auth(mock_clerk_user):
     Mock Clerk authentication dependency
     Use with app.dependency_overrides
     """
-    def _mock_require_clerk_user(*args, **kwargs):
+    async def _mock_require_clerk_user(*args, **kwargs):
         return mock_clerk_user
     return _mock_require_clerk_user
 
 
 @pytest.fixture
-def client(mock_auth):
+def client(mock_auth, mock_clerk_user):
     """
     FastAPI test client with mocked authentication
     """
     from backend.main import app, current_user
     from backend.clerk_auth import require_clerk_user
     
+    # Create sync version for current_user (it's not async)
+    def sync_mock(*args, **kwargs):
+        return mock_clerk_user
+    
     # Override both authentication functions
     app.dependency_overrides[require_clerk_user] = mock_auth
-    app.dependency_overrides[current_user] = mock_auth
+    app.dependency_overrides[current_user] = sync_mock
     
     with TestClient(app) as test_client:
         yield test_client
