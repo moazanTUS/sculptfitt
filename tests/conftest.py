@@ -11,67 +11,24 @@ from typing import Generator
 
 # Set test environment variables before importing app
 os.environ["TESTING"] = "1"
-os.environ["DB_NAME"] = os.getenv("TEST_DB_NAME", "sculpfit_test")
 
 
 @pytest.fixture(scope="session")
 def test_db_config():
-    """Test database configuration"""
+    """Database configuration for tests"""
     return {
-        "host": os.getenv("DB_HOST", "127.0.0.1"),
-        "user": os.getenv("DB_USER", "root"),
-        "password": os.getenv("DB_PASS", ""),
-        "database": os.getenv("TEST_DB_NAME", "sculpfit_test"),
-        "port": int(os.getenv("DB_PORT", "3306")),
+        "host": os.getenv("DB_HOST"),
+        "user": os.getenv("DB_USER"),
+        "password": os.getenv("DB_PASS"),
+        "database": os.getenv("DB_NAME"),
+        "port": int(os.getenv("DB_PORT")),
     }
 
 
-@pytest.fixture(scope="session")
-def setup_test_database(test_db_config):
-    """
-    Create test database and tables before all tests
-    Drop database after all tests complete
-    """
-    # Connect without database to create it
-    conn = pymysql.connect(
-        host=test_db_config["host"],
-        user=test_db_config["user"],
-        password=test_db_config["password"] if test_db_config["password"] else None,
-        port=test_db_config["port"],
-    )
-    
-    try:
-        with conn.cursor() as cursor:
-            # Drop and recreate test database
-            cursor.execute(f"DROP DATABASE IF EXISTS {test_db_config['database']}")
-            cursor.execute(f"CREATE DATABASE {test_db_config['database']}")
-        conn.commit()
-        
-        # Run initialization script
-        conn.select_db(test_db_config['database'])
-        with open("init_database.sql", "r") as f:
-            sql_script = f.read()
-            # Execute each statement separately
-            for statement in sql_script.split(';'):
-                if statement.strip():
-                    with conn.cursor() as cursor:
-                        cursor.execute(statement)
-        conn.commit()
-        
-        yield conn
-        
-    finally:
-        # Cleanup: drop test database
-        with conn.cursor() as cursor:
-            cursor.execute(f"DROP DATABASE IF EXISTS {test_db_config['database']}")
-        conn.commit()
-        conn.close()
-
-
 @pytest.fixture
-def db_connection(setup_test_database, test_db_config):
+def db_connection(test_db_config):
     """
-    Provide a fresh database connection for each test
+    Provide database connection for tests
     Automatically rolls back changes after each test
     """
     conn = pymysql.connect(
