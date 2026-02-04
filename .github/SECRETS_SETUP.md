@@ -30,18 +30,39 @@ To run automated tests, you need to add these secrets to your GitHub repository:
   - Go to **API Keys**
   - Copy the **Secret Key** (starts with `sk_test_` or `sk_live_`)
 
+### 3. DB_HOST
+- **Name:** `DB_HOST`
+- **Value:** Your database host (e.g., `containers-us-west-123.railway.app`)
+- **Where to get it:** From your Railway/database provider
+
+### 4. DB_USER
+- **Name:** `DB_USER`
+- **Value:** Your database username (e.g., `root`)
+
+### 5. DB_PASS
+- **Name:** `DB_PASS`
+- **Value:** Your database password
+
+### 6. DB_NAME
+- **Name:** `DB_NAME`
+- **Value:** Your database name (e.g., `sculpfit`)
+
+### 7. DB_PORT
+- **Name:** `DB_PORT`
+- **Value:** Your database port (e.g., `3306`)
+
 ---
 
-## Database Secrets (Handled by GitHub Actions)
+## Summary: All Secrets Needed
 
-These are automatically configured in the workflow:
-- ✅ DB_HOST: 127.0.0.1 (GitHub Actions MySQL service)
-- ✅ DB_USER: root
-- ✅ DB_PASS: testpassword
-- ✅ DB_NAME: sculpfit_test
-- ✅ DB_PORT: 3306
-
-**No action needed** - the workflow creates a test database automatically!
+Add these **7 secrets** to GitHub:
+1. `GEMINI_API_KEY` - AI API key
+2. `CLERK_SECRET_KEY` - Authentication key
+3. `DB_HOST` - Database host
+4. `DB_USER` - Database username
+5. `DB_PASS` - Database password
+6. `DB_NAME` - Database name
+7. `DB_PORT` - Database port
 
 ---
 
