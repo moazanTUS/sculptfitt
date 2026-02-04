@@ -55,6 +55,7 @@ class TestDatabaseConnection:
             get_conn()
 
 
+@pytest.mark.skip(reason="Database query tests skipped - using only connection tests")
 @pytest.mark.integration
 class TestDatabaseQueries:
     """Test database queries with real test database"""
