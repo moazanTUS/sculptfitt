@@ -1,4 +1,4 @@
-whats name: Tests and Coverage
+name: Tests and Coverage
 
 on:
   push:
@@ -75,7 +75,7 @@ jobs:
           # CORS (optional for testing)
           ALLOWED_ORIGINS: http://localhost:8000
         run: |
-          pytest tests/unit/ -v --cov=backend --cov-report=xml --cov-report=term
+          pytest tests/unit/ -v
 
       - name: Run integration tests
         env:
@@ -96,10 +96,4 @@ jobs:
           # CORS (optional for testing)
           ALLOWED_ORIGINS: http://localhost:8000
         run: |
-          pytest tests/integration/ -v --cov=backend --cov-append --cov-report=xml --cov-report=term
-
-      - name: Test Summary
-        run: |
-          echo "## Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ All tests passed!" >> $GITHUB_STEP_SUMMARY
+          pytest tests/integration/ -v
