@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>SculpFit - AI Fitness Coach</title>
 
-  <link rel="stylesheet" href="/static/styles.css?v=5">
+  <link rel="stylesheet" href="/static/styles.css?v=7">
 
   <script async crossorigin="anonymous"
     data-clerk-publishable-key="pk_test_Zml0dGluZy1tb3VzZS02Ni5jbGVyay5hY2NvdW50cy5kZXYk"
@@ -41,16 +41,16 @@
 
     <!-- Resume Workout Banner -->
     <div id="resumeWorkoutBanner"
-      style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 16px; margin: 12px; border-radius: 8px; color: white; justify-content: space-between; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); display: none; flex-direction: column; gap: 12px;">
+      style="background: linear-gradient(135deg, #e09145 0%, #c77b3f 100%); padding: 16px; margin: 12px; border-radius: 8px; color: white; justify-content: space-between; box-shadow: 0 4px 14px rgba(224, 145, 69, 0.2); display: none; flex-direction: column; gap: 12px;">
       <div>
         <strong>💪 <span id="resumeWorkoutName">Unfinished Workout</span></strong>
         <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Resume your workout?</p>
       </div>
       <div style="display: flex; gap: 8px;">
         <button onclick="window.resumeWorkout()"
-          style="padding: 8px 16px; background: white; color: #667eea; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px;">Resume</button>
+          style="padding: 8px 16px; background: white; color: #c77b3f; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Resume</button>
         <button onclick="window.abandonWorkout()"
-          style="padding: 8px 16px; background: rgba(255,107,157,0.3); color: #ff6b9d; border: 1px solid #ff6b9d; border-radius: 4px; cursor: pointer; font-size: 13px;">Abandon</button>
+          style="padding: 8px 16px; background: rgba(0,0,0,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; cursor: pointer; font-size: 13px;">Abandon</button>
         <button onclick="document.getElementById('resumeWorkoutBanner').style.display='none'"
           style="padding: 8px 16px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;">Dismiss</button>
       </div>
@@ -190,29 +190,29 @@
             <div style="grid-column: span 2; margin-top: 16px;">
               <label class="label">Trim Video (Drag handles or click timeline)</label>
               <div id="trimmerContainer"
-                style="position: relative; background: #1a1a2e; border-radius: 8px; height: 60px; cursor: pointer; overflow: hidden; border: 1px solid rgba(110, 255, 232, 0.3);">
+                style="position: relative; background: #141414; border-radius: 8px; height: 60px; cursor: pointer; overflow: hidden; border: 1px solid rgba(224, 145, 69, 0.2);">
                 <div id="trimmerTimeline"
-                  style="width: 100%; height: 30px; background: linear-gradient(90deg, rgba(110, 255, 232, 0.2) 0%, rgba(110, 255, 232, 0.1) 100%); position: relative; border-bottom: 1px solid rgba(110, 255, 232, 0.2);">
+                  style="width: 100%; height: 30px; background: linear-gradient(90deg, rgba(224, 145, 69, 0.1) 0%, rgba(224, 145, 69, 0.05) 100%); position: relative; border-bottom: 1px solid rgba(224, 145, 69, 0.15);">
                   <div id="playheadIndicator"
-                    style="position: absolute; width: 2px; height: 30px; background: #6effe8; left: 0%; top: 0; z-index: 3;">
+                    style="position: absolute; width: 2px; height: 30px; background: #e09145; left: 0%; top: 0; z-index: 3;">
                   </div>
                 </div>
                 <div id="trimmerTrack" style="position: relative; width: 100%; height: 30px;">
                   <!-- Selection range -->
                   <div id="trimmerSelection"
-                    style="position: absolute; top: 5px; height: 20px; background: rgba(110, 255, 232, 0.3); border: 2px solid #6effe8; border-radius: 4px; left: 0%; width: 100%; z-index: 2;">
+                    style="position: absolute; top: 5px; height: 20px; background: rgba(224, 145, 69, 0.15); border: 2px solid #e09145; border-radius: 4px; left: 0%; width: 100%; z-index: 2;">
                   </div>
                   <!-- Start handle -->
                   <div id="trimmerStartHandle"
-                    style="position: absolute; top: 0; left: 0%; width: 12px; height: 30px; background: #6effe8; cursor: ew-resize; z-index: 4; border-radius: 2px 0 0 2px;">
+                    style="position: absolute; top: 0; left: 0%; width: 12px; height: 30px; background: #e09145; cursor: ew-resize; z-index: 4; border-radius: 2px 0 0 2px;">
                   </div>
                   <!-- End handle -->
                   <div id="trimmerEndHandle"
-                    style="position: absolute; top: 0; right: 0%; width: 12px; height: 30px; background: #6effe8; cursor: ew-resize; z-index: 4; border-radius: 0 2px 2px 0;">
+                    style="position: absolute; top: 0; right: 0%; width: 12px; height: 30px; background: #e09145; cursor: ew-resize; z-index: 4; border-radius: 0 2px 2px 0;">
                   </div>
                 </div>
                 <div
-                  style="position: absolute; bottom: 2px; left: 4px; right: 4px; font-size: 10px; color: #6effe8; text-align: center; pointer-events: none;">
+                  style="position: absolute; bottom: 2px; left: 4px; right: 4px; font-size: 10px; color: #e09145; text-align: center; pointer-events: none;">
                   <span id="trimmerTimeDisplay">00:00 - 00:00</span>
                 </div>
               </div>
@@ -536,7 +536,7 @@
   <div id="successModal"
     style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
     <div
-      style="background: var(--bg); border: 2px solid var(--accent); border-radius: 12px; padding: 32px; text-align: center; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+      style="background: var(--bg); border: 2px solid var(--accent); border-radius: 12px; padding: 32px; text-align: center; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
       <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
       <h2 style="margin: 0 0 12px 0; color: var(--text);">Workout Created!</h2>
       <p id="successMessage" style="margin: 0 0 24px 0; color: var(--muted); font-size: 14px;"></p>
@@ -549,7 +549,7 @@
     style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 9998; overflow-y: auto;">
     <div style="max-width: 900px; margin: 20px auto; background: var(--bg); border-radius: 12px; overflow: hidden;">
       <div
-        style="background: linear-gradient(135deg, var(--accent), #667eea); padding: 24px; color: white; display: flex; justify-content: space-between; align-items: start;">
+        style="background: var(--accent-gradient); padding: 24px; color: white; display: flex; justify-content: space-between; align-items: start;">
         <div>
           <div style="font-size: 28px; margin-bottom: 8px;" id="videoExerciseEmoji">🏋️</div>
           <h2 id="videoExerciseName" style="margin: 0; font-size: 24px;">Exercise Name</h2>
@@ -575,7 +575,7 @@
   <div id="workoutExecutionModal"
     style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9998; overflow-y: auto;">
     <div style="max-width: 600px; margin: 20px auto; background: var(--bg); border-radius: 12px; overflow: hidden;">
-      <div style="background: linear-gradient(135deg, var(--accent), #667eea); padding: 24px; color: white;">
+      <div style="background: var(--accent-gradient); padding: 24px; color: white;">
         <div style="display: flex; justify-content: space-between; align-items: start;">
           <div>
             <div style="font-size: 32px;">💪</div>
@@ -609,7 +609,7 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=6"></script>
+  <script src="/static/app.js?v=8"></script>
 </body>
 
 </html>

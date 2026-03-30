@@ -1,5 +1,5 @@
-(() => {
-  console.log("[app.js] loaded ✅");
+﻿(() => {
+  console.log("[app.js] loaded âœ…");
 
   // Authentication check and logout setup
   async function setupAuth() {
@@ -28,8 +28,8 @@
         const userName = Clerk.user.firstName || Clerk.user.emailAddresses?.[0]?.emailAddress || 'User';
         authSlot.innerHTML = `
           <div style="display: flex; align-items: center; gap: 12px;">
-            <span style="font-size: 13px; color: var(--muted);">👤 ${escapeHtml(userName)}</span>
-            <button id="logoutBtn" class="btn" style="font-size: 12px; padding: 6px 12px; background: rgba(255,107,157,0.2); border-color: #ff6b9d; color: #ff6b9d;">
+            <span style="font-size: 13px; color: var(--muted);">ðŸ‘¤ ${escapeHtml(userName)}</span>
+            <button id="logoutBtn" class="btn" style="font-size: 12px; padding: 6px 12px; background: rgba(224,145,69,0.15); border: 1px solid #e09145; color: #e09145; box-shadow: none;">
               Sign Out
             </button>
           </div>
@@ -121,7 +121,7 @@
           workoutNameEl.textContent = latestIncomplete.workout_name || "Unfinished Workout";
         }
         banner.style.display = "flex";
-        console.log("[checkForIncompleteWorkout] Banner shown ✅");
+        console.log("[checkForIncompleteWorkout] Banner shown âœ…");
       }
 
       console.log("[checkForIncompleteWorkout] Found incomplete session:", latestIncomplete.id);
@@ -204,7 +204,7 @@
         body: new URLSearchParams({
           workout_plan_id: 1,
           workout_plan_type: "ai",
-          workout_name: "💪 Test Incomplete Workout",
+          workout_name: "ðŸ’ª Test Incomplete Workout",
           day_number: 1
         })
       });
@@ -258,7 +258,7 @@
       console.log("[abandonWorkout] Response:", data);
 
       if (data.success || res.ok) {
-        console.log("[abandonWorkout] Workout abandoned ✅");
+        console.log("[abandonWorkout] Workout abandoned âœ…");
 
         // Hide the banner
         const banner = document.getElementById("resumeWorkoutBanner");
@@ -267,7 +267,7 @@
         window.incompleteSessionId = null;
         window.incompleteSessionData = null;
 
-        showMessageModal("✅ Workout Abandoned", "The incomplete workout has been deleted.", true);
+        showMessageModal("âœ… Workout Abandoned", "The incomplete workout has been deleted.", true);
       } else {
         throw new Error(data.error || "Failed to abandon workout");
       }
@@ -307,7 +307,7 @@
       console.log("[deleteWorkoutSession] Response:", data);
 
       if (data.success || res.ok) {
-        console.log("[deleteWorkoutSession] Workout deleted ✅");
+        console.log("[deleteWorkoutSession] Workout deleted âœ…");
 
         // Refresh the history list
         loadWorkoutHistory();
@@ -316,7 +316,7 @@
         const messageOverlay = document.getElementById("messageOverlay");
         if (messageOverlay) messageOverlay.style.display = "none";
 
-        showMessageModal("✅ Workout Deleted", "The workout has been removed from your history.", true);
+        showMessageModal("âœ… Workout Deleted", "The workout has been removed from your history.", true);
       } else {
         throw new Error(data.error || "Failed to delete workout");
       }
@@ -382,7 +382,7 @@
           }
         });
       });
-      console.log("[setupPageNavigation] Setup complete ✅");
+      console.log("[setupPageNavigation] Setup complete âœ…");
     } catch (err) {
       console.error("[setupPageNavigation] ERROR:", err);
     }
@@ -511,7 +511,7 @@
           <div><b>Day ${escapeHtml(String(dayNum))}</b></div>
           <div style="display:flex; gap:6px;">
             <button class="btnSmall" id="add-item-${dayId}">+ Exercise</button>
-            <button class="btnSmall" id="start-day-${dayId}" style="background: var(--accent); color: var(--bg);">▶ Start</button>
+            <button class="btnSmall" id="start-day-${dayId}" style="background: var(--accent); color: var(--bg);">â–¶ Start</button>
           </div>
         </div>
 
@@ -534,7 +534,7 @@
     editorBody.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
         <div class="muted">
-          <b>${escapeHtml(plan.name)}</b> • Focus: <b>${escapeHtml(plan.primary_focus || "")}</b>
+          <b>${escapeHtml(plan.name)}</b> â€¢ Focus: <b>${escapeHtml(plan.primary_focus || "")}</b>
         </div>
       </div>
       <div id="edit-days"></div>
@@ -685,9 +685,9 @@
         <td>${escapeHtml(it.body_type || "")}</td>
         <td>${escapeHtml(focus)}</td>
         <td>
-          <button class="btnSmall" id="open-plan-${it.id}">📋 View Workout</button>
-          <button class="btnSmall" id="export-plan-${it.id}" style="background-color:#1976d2; color:white;">📥 Export CSV</button>
-          <button class="btnSmall" id="delete-plan-${it.id}" style="background-color:#d32f2f; color:white;">🗑️ Delete</button>
+          <button class="btnSmall" id="open-plan-${it.id}">ðŸ“‹ View Workout</button>
+          <button class="btnSmall" id="export-plan-${it.id}" style="background-color:#1976d2; color:white;">ðŸ“¥ Export CSV</button>
+          <button class="btnSmall" id="delete-plan-${it.id}" style="background-color:#d32f2f; color:white;">ðŸ—‘ï¸ Delete</button>
         </td>
       `;
       tr.querySelector(`#open-plan-${it.id}`).onclick = () => openPlan(it.id);
@@ -774,7 +774,7 @@
 
       card.innerHTML = `
         <p class="planCardTitle" style="font-size: 13px; margin: 0 0 4px 0; font-weight: bold;">${escapeHtml(plan.name)}</p>
-        <p class="planCardSub" style="font-size: 11px; margin: 0 0 8px 0; color: var(--muted);">${plan.primary_focus.toUpperCase()} • ${plan.days}d</p>
+        <p class="planCardSub" style="font-size: 11px; margin: 0 0 8px 0; color: var(--muted);">${plan.primary_focus.toUpperCase()} â€¢ ${plan.days}d</p>
         <div style="display: flex; gap: 6px; margin-bottom: 10px;">
           <button class="btn" style="flex: 1; font-size: 10px; padding: 6px 8px; white-space: nowrap;" id="${expandId}">View</button>
           <button class="btn" style="flex: 1; font-size: 10px; padding: 6px 8px; background: var(--accent); color: white; white-space: nowrap;" id="${saveId}">Save</button>
@@ -841,7 +841,7 @@
           const res = await authedFetch("/api/select-plan", { method: "POST", body: formData });
           const data = await res.json();
           if (!res.ok || !data.success) throw new Error(data.error || "Failed to save plan");
-          alert(`✅ ${data.message}\n\nNow open your plan to customize it!`);
+          alert(`âœ… ${data.message}\n\nNow open your plan to customize it!`);
           await refreshMyPlans();
         } catch (e) {
           console.error("Error saving plan:", e);
@@ -912,7 +912,7 @@
           <label style="font-size: 11px; color: var(--muted);">Rest (sec)</label>
           <input type="number" class="exercise-rest" placeholder="60" value="60" min="15" max="300" required style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 12px;" />
         </div>
-        <button type="button" class="btnSmall btnGhost" style="padding: 6px 10px;" onclick="document.getElementById('${rowId}').remove();">✕</button>
+        <button type="button" class="btnSmall btnGhost" style="padding: 6px 10px;" onclick="document.getElementById('${rowId}').remove();">âœ•</button>
       `;
       exercisesContainer.appendChild(row);
     }
@@ -1047,7 +1047,7 @@
       const res = await authedFetch(`/api/select-plan`, { method: "POST", body: formData });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || "Failed to select plan");
-      alert(`✅ ${data.message}\n\nNow open your plan to customize it!`);
+      alert(`âœ… ${data.message}\n\nNow open your plan to customize it!`);
       await refreshMyPlans();
     } catch (e) {
       console.error("Error selecting plan:", e);
@@ -1197,7 +1197,7 @@
 
     const agreed = await openConsentModal();
     if (!agreed) {
-      imageResult.textContent = "Image analysis canceled — consent not given.";
+      imageResult.textContent = "Image analysis canceled â€” consent not given.";
       return;
     }
 
@@ -1219,22 +1219,22 @@
       // Show progress with styled HTML
       imageResult.innerHTML = `
         <div style="text-align: center; padding: 24px;">
-          <div style="font-size: 48px; margin-bottom: 16px; animation: spin 2s linear infinite;">⚡</div>
+          <div style="font-size: 48px; margin-bottom: 16px; animation: spin 2s linear infinite;">âš¡</div>
           <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Analyzing Your Physique</div>
           <div style="font-size: 13px; color: var(--muted); margin-bottom: 20px;">This may take a few moments</div>
           <div style="margin-top: 20px;">
             <div id="progressStep1" style="font-size: 14px; margin: 8px 0; color: var(--muted);">
-              <span style="display: inline-block; width: 20px;">⏳</span> Detecting pose...
+              <span style="display: inline-block; width: 20px;">â³</span> Detecting pose...
             </div>
             <div id="progressStep2" style="font-size: 14px; margin: 8px 0; color: var(--muted);">
-              <span style="display: inline-block; width: 20px;">⟳</span> Analyzing muscles...
+              <span style="display: inline-block; width: 20px;">âŸ³</span> Analyzing muscles...
             </div>
             <div id="progressStep3" style="font-size: 14px; margin: 8px 0; color: var(--muted);">
-              <span style="display: inline-block; width: 20px;">⊙</span> Generating plan...
+              <span style="display: inline-block; width: 20px;">âŠ™</span> Generating plan...
             </div>
           </div>
           <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 20px; overflow: hidden;">
-            <div id="progressBar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #667eea, #764ba2); border-radius: 2px; transition: width 0.3s ease;"></div>
+            <div id="progressBar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #e09145, #c77b3f); border-radius: 2px; transition: width 0.3s ease;"></div>
           </div>
         </div>
         <style>
@@ -1254,10 +1254,10 @@
 
         progressStep++;
         if (progressStep === 1) {
-          document.getElementById("progressStep1").innerHTML = '<span style="display: inline-block; width: 20px;">✓</span> <span style="color: var(--accent);">Pose detected</span>';
+          document.getElementById("progressStep1").innerHTML = '<span style="display: inline-block; width: 20px;">âœ“</span> <span style="color: var(--accent);">Pose detected</span>';
           document.getElementById("progressStep1").style.color = "var(--accent)";
         } else if (progressStep === 2) {
-          document.getElementById("progressStep2").innerHTML = '<span style="display: inline-block; width: 20px;">✓</span> <span style="color: var(--accent);">Muscle analysis complete</span>';
+          document.getElementById("progressStep2").innerHTML = '<span style="display: inline-block; width: 20px;">âœ“</span> <span style="color: var(--accent);">Muscle analysis complete</span>';
           document.getElementById("progressStep2").style.color = "var(--accent)";
         }
       }, 2000);
@@ -1275,23 +1275,23 @@
       imageResult.innerHTML = `
         <div style="text-align: center; padding: 16px 12px;">
           <div style="text-align: center; margin-bottom: 12px;">
-            <div style="font-size: 32px; margin-bottom: 6px;">✅</div>
+            <div style="font-size: 32px; margin-bottom: 6px;">âœ…</div>
             <h2 style="margin: 0; font-size: 18px; color: var(--accent);">Analysis Complete!</h2>
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-            <div style="padding: 12px; background: rgba(102, 126, 234, 0.1); border-radius: 6px; border-left: 3px solid #667eea;">
+            <div style="padding: 12px; background: rgba(224, 145, 69, 0.08); border-radius: 6px; border-left: 3px solid #e09145;">
               <div style="font-size: 11px; color: var(--muted); margin-bottom: 3px;">BODY TYPE</div>
               <div style="font-size: 15px; font-weight: 600;">${data.body_type || 'Unknown'}</div>
             </div>
-            <div style="padding: 12px; background: rgba(102, 126, 234, 0.1); border-radius: 6px; border-left: 3px solid #667eea;">
+            <div style="padding: 12px; background: rgba(224, 145, 69, 0.08); border-radius: 6px; border-left: 3px solid #e09145;">
               <div style="font-size: 11px; color: var(--muted); margin-bottom: 3px;">PRIMARY FOCUS</div>
               <div style="font-size: 15px; font-weight: 600;">${data.primary_focus || 'Chest'}</div>
             </div>
-            <div style="padding: 12px; background: rgba(102, 126, 234, 0.1); border-radius: 6px; border-left: 3px solid #667eea;">
+            <div style="padding: 12px; background: rgba(224, 145, 69, 0.08); border-radius: 6px; border-left: 3px solid #e09145;">
               <div style="font-size: 11px; color: var(--muted); margin-bottom: 3px;">SECONDARY</div>
               <div style="font-size: 13px; font-weight: 600;">${(data.secondary_focuses || []).join(', ') || 'N/A'}</div>
             </div>
-            <div style="padding: 12px; background: rgba(102, 126, 234, 0.1); border-radius: 6px; border-left: 3px solid #667eea;">
+            <div style="padding: 12px; background: rgba(224, 145, 69, 0.08); border-radius: 6px; border-left: 3px solid #e09145;">
               <div style="font-size: 11px; color: var(--muted); margin-bottom: 3px;">PROGRAM</div>
               <div style="font-size: 15px; font-weight: 600;">8 weeks, ${data.difficulty}</div>
             </div>
@@ -1347,7 +1347,7 @@
           dayHTML += `<div style="margin-bottom: 8px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 6px;">
             <div style="font-weight: 500;">${escapeHtml(ex.name)}</div>
             <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">
-              ${ex.sets}x${ex.reps} • ${ex.rest_seconds}s rest
+              ${ex.sets}x${ex.reps} â€¢ ${ex.rest_seconds}s rest
             </div>
           </div>`;
         });
@@ -1545,12 +1545,12 @@
           const formattedFeedback = feedback
             .split('\n')
             .map(line => {
-              if (line.startsWith('✓')) {
+              if (line.startsWith('âœ“')) {
                 return `<div style="color: #2ed573; margin: 8px 0; padding: 8px 12px; background: rgba(46, 213, 115, 0.1); border-left: 3px solid #2ed573; border-radius: 4px;">${line}</div>`;
-              } else if (line.startsWith('⚠️') || line.startsWith('Warning')) {
+              } else if (line.startsWith('âš ï¸') || line.startsWith('Warning')) {
                 return `<div style="color: #ffc107; margin: 8px 0; padding: 8px 12px; background: rgba(255, 193, 7, 0.1); border-left: 3px solid #ffc107; border-radius: 4px;">${line}</div>`;
               } else if (line.startsWith('**') || line.includes('##')) {
-                return `<h4 style="color: #6effe8; margin: 12px 0 8px 0; font-size: 14px;">${line.replace(/\*\*/g, '').replace(/#/g, '')}</h4>`;
+                return `<h4 style="color: #e09145; margin: 12px 0 8px 0; font-size: 14px;">${line.replace(/\*\*/g, '').replace(/#/g, '')}</h4>`;
               } else if (line.trim() !== '') {
                 return `<div style="margin: 4px 0; line-height: 1.6; color: #a8b5d1; font-size: 13px;">${line}</div>`;
               }
@@ -1560,17 +1560,17 @@
 
           const analysisHTML = `
             <div style="background: linear-gradient(135deg, rgba(110, 255, 232, 0.1) 0%, rgba(110, 255, 232, 0.05) 100%); border: 1px solid rgba(110, 255, 232, 0.3); border-radius: 12px; padding: 24px;">
-              <h3 style="margin: 0 0 20px 0; color: #f0f4ff; font-size: 18px;">✅ Analysis Complete</h3>
+              <h3 style="margin: 0 0 20px 0; color: #f0f4ff; font-size: 18px;">âœ… Analysis Complete</h3>
               
               <div style="background: rgba(110, 255, 232, 0.08); border: 1px solid rgba(110, 255, 232, 0.2); border-radius: 8px; padding: 16px; margin-bottom: 16px;">
-                <div style="color: #6effe8; font-weight: 600; font-size: 14px; margin-bottom: 12px;">📋 ${exercise.charAt(0).toUpperCase() + exercise.slice(1)} Feedback</div>
+                <div style="color: #e09145; font-weight: 600; font-size: 14px; margin-bottom: 12px;">ðŸ“‹ ${exercise.charAt(0).toUpperCase() + exercise.slice(1)} Feedback</div>
                 <div style="color: #a8b5d1;">
                   ${formattedFeedback}
                 </div>
               </div>
               
               <div style="margin-top: 12px; padding: 12px; background: rgba(110, 255, 232, 0.05); border-radius: 6px; font-size: 11px; color: var(--muted);">
-                <strong style="color: #6effe8;">Analyzed frames:</strong> ${data.num_frames_analyzed || 5} | <strong style="color: #6effe8;">Exercise:</strong> ${exercise.charAt(0).toUpperCase() + exercise.slice(1)}
+                <strong style="color: #e09145;">Analyzed frames:</strong> ${data.num_frames_analyzed || 5} | <strong style="color: #e09145;">Exercise:</strong> ${exercise.charAt(0).toUpperCase() + exercise.slice(1)}
               </div>
             </div>
           `;
@@ -1586,7 +1586,7 @@
         if (loadingContainer) {
           loadingContainer.innerHTML = `
             <div style="background: linear-gradient(135deg, rgba(255, 99, 71, 0.1) 0%, rgba(255, 99, 71, 0.05) 100%); border: 1px solid rgba(255, 99, 71, 0.3); border-radius: 12px; padding: 24px; text-align: center;">
-              <p style="color: #ff6347; margin: 0 0 16px 0; font-size: 16px; font-weight: bold;">❌ Analysis Failed</p>
+              <p style="color: #ff6347; margin: 0 0 16px 0; font-size: 16px; font-weight: bold;">âŒ Analysis Failed</p>
               <p style="color: #f0f4ff; margin: 0; font-size: 14px;">Error: ${data.message}</p>
             </div>
           `;
@@ -1602,7 +1602,7 @@
       if (loadingContainer) {
         loadingContainer.innerHTML = `
           <div style="background: linear-gradient(135deg, rgba(255, 99, 71, 0.1) 0%, rgba(255, 99, 71, 0.05) 100%); border: 1px solid rgba(255, 99, 71, 0.3); border-radius: 12px; padding: 24px; text-align: center;">
-            <p style="color: #ff6347; margin: 0 0 16px 0; font-size: 16px; font-weight: bold;">❌ Connection Failed</p>
+            <p style="color: #ff6347; margin: 0 0 16px 0; font-size: 16px; font-weight: bold;">âŒ Connection Failed</p>
             <p style="color: #f0f4ff; margin: 0; font-size: 14px;">Could not connect to analysis server.</p>
           </div>
         `;
@@ -1667,7 +1667,7 @@
     videoResult.style.minHeight = "auto";
     videoResult.innerHTML = `
       <div style="background: linear-gradient(135deg, rgba(110, 255, 232, 0.1) 0%, rgba(110, 255, 232, 0.05) 100%); border: 1px solid rgba(110, 255, 232, 0.3); border-radius: 12px; padding: 24px; text-align: center;">
-        <div style="font-size: 48px; margin-bottom: 12px; animation: spin 2s linear infinite;">⚡</div>
+        <div style="font-size: 48px; margin-bottom: 12px; animation: spin 2s linear infinite;">âš¡</div>
         <p style="color: #f0f4ff; margin: 0; font-size: 14px; font-weight: 600;">Analyzing your video...</p>
         <p style="color: var(--muted); margin: 4px 0 0 0; font-size: 12px;">This may take a while</p>
       </div>
@@ -1721,7 +1721,7 @@
         // Update loading message
         videoResult.innerHTML = `
           <div style="background: linear-gradient(135deg, rgba(110, 255, 232, 0.1) 0%, rgba(110, 255, 232, 0.05) 100%); border: 1px solid rgba(110, 255, 232, 0.3); border-radius: 12px; padding: 24px; text-align: center;">
-            <p style="color: #6effe8; margin: 0 0 16px 0; font-size: 16px; font-weight: bold;">🎥 Analyzing Your Video Live</p>
+            <p style="color: #e09145; margin: 0 0 16px 0; font-size: 16px; font-weight: bold;">ðŸŽ¥ Analyzing Your Video Live</p>
 
           </div>
         `;
@@ -1745,9 +1745,9 @@
         // Try live analysis without video preview
         videoResult.innerHTML = `
           <div style="background: linear-gradient(135deg, rgba(110, 255, 232, 0.1) 0%, rgba(110, 255, 232, 0.05) 100%); border: 1px solid rgba(110, 255, 232, 0.3); border-radius: 12px; padding: 24px; text-align: center;">
-            <p style="color: #6effe8; margin: 0 0 16px 0; font-size: 16px; font-weight: bold;">🎥 Analyzing Your Video Live</p>
+            <p style="color: #e09145; margin: 0 0 16px 0; font-size: 16px; font-weight: bold;">ðŸŽ¥ Analyzing Your Video Live</p>
             <p style="color: #f0f4ff; margin: 0; font-size: 14px;">Real-time rep counting in progress...</p>
-            <div id="liveRepCounter" style="font-size: 32px; color: #6effe8; margin-top: 16px;">Reps: 0</div>
+            <div id="liveRepCounter" style="font-size: 32px; color: #e09145; margin-top: 16px;">Reps: 0</div>
           </div>
         `;
 
@@ -1764,12 +1764,12 @@
       const formattedFeedback = feedback
         .split('\n')
         .map(line => {
-          if (line.startsWith('✓')) {
+          if (line.startsWith('âœ“')) {
             return `<div style="color: #2ed573; margin: 6px 0; padding: 8px 12px; background: rgba(46, 213, 115, 0.1); border-left: 2px solid #2ed573; border-radius: 3px; font-size: 14px;">${line}</div>`;
-          } else if (line.startsWith('⚠️') || line.startsWith('Warning')) {
+          } else if (line.startsWith('âš ï¸') || line.startsWith('Warning')) {
             return `<div style="color: #ffc107; margin: 6px 0; padding: 8px 12px; background: rgba(255, 193, 7, 0.1); border-left: 2px solid #ffc107; border-radius: 3px; font-size: 14px;">${line}</div>`;
           } else if (line.startsWith('**') || line.includes('##')) {
-            return `<h4 style="color: #6effe8; margin: 10px 0 6px 0; font-size: 13px; font-weight: 600;">${line.replace(/\*\*/g, '').replace(/#/g, '')}</h4>`;
+            return `<h4 style="color: #e09145; margin: 10px 0 6px 0; font-size: 13px; font-weight: 600;">${line.replace(/\*\*/g, '').replace(/#/g, '')}</h4>`;
           } else if (line.trim() !== '') {
             return `<div style="margin: 4px 0; line-height: 1.5; color: #a8b5d1; font-size: 14px;">${line}</div>`;
           }
@@ -1779,17 +1779,17 @@
 
       const analysisHTML = `
         <div style="background: linear-gradient(135deg, rgba(110, 255, 232, 0.1) 0%, rgba(110, 255, 232, 0.05) 100%); border: 1px solid rgba(110, 255, 232, 0.3); border-radius: 8px; padding: 16px;">
-          <h3 style="margin: 0 0 12px 0; color: #f0f4ff; font-size: 16px;">✅ Analysis Complete</h3>
+          <h3 style="margin: 0 0 12px 0; color: #f0f4ff; font-size: 16px;">âœ… Analysis Complete</h3>
           
           <div style="background: rgba(110, 255, 232, 0.08); border: 1px solid rgba(110, 255, 232, 0.2); border-radius: 6px; padding: 12px; margin-bottom: 12px;">
-            <div style="color: #6effe8; font-weight: 600; font-size: 14px; margin-bottom: 8px;">📋 ${exercise.charAt(0).toUpperCase() + exercise.slice(1)} Feedback</div>
+            <div style="color: #e09145; font-weight: 600; font-size: 14px; margin-bottom: 8px;">ðŸ“‹ ${exercise.charAt(0).toUpperCase() + exercise.slice(1)} Feedback</div>
             <div style="color: #a8b5d1;">
               ${formattedFeedback}
             </div>
           </div>
           
           <div style="margin-top: 8px; padding: 10px; background: rgba(110, 255, 232, 0.05); border-radius: 4px; font-size: 12px; color: var(--muted);">
-            <strong style="color: #6effe8;">Frames:</strong> ${data.num_frames_analyzed || 3} | <strong style="color: #6effe8;">Exercise:</strong> ${exercise.charAt(0).toUpperCase() + exercise.slice(1)}${data.detected_reps ? ` | <strong style="color: #6effe8;">Reps:</strong> ${data.detected_reps}` : ''}
+            <strong style="color: #e09145;">Frames:</strong> ${data.num_frames_analyzed || 3} | <strong style="color: #e09145;">Exercise:</strong> ${exercise.charAt(0).toUpperCase() + exercise.slice(1)}${data.detected_reps ? ` | <strong style="color: #e09145;">Reps:</strong> ${data.detected_reps}` : ''}
           </div>
         </div>
       `;
@@ -1827,7 +1827,7 @@
             <div style="background: var(--panel); padding: 12px; border-radius: 6px; border-left: 3px solid var(--accent);">
               <div style="font-weight: 500;">${escapeHtml(ex.exercise_name)}</div>
               <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">
-                ${ex.total_times_completed} times • ${ex.personal_record_weight ? ex.personal_record_weight + ' lbs PR' : 'No weight'}
+                ${ex.total_times_completed} times â€¢ ${ex.personal_record_weight ? ex.personal_record_weight + ' lbs PR' : 'No weight'}
               </div>
             </div>
           `).join("");
@@ -1854,14 +1854,14 @@
               <div>
                 <div style="font-weight: 500;">${escapeHtml(session.workout_name)} - Day ${session.day_number}</div>
                 <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">
-                  📅 ${new Date(session.session_date).toLocaleDateString()} 
-                  ${session.duration_minutes ? `• ⏱️ ${session.duration_minutes} min` : ''}
-                  ${session.rating ? `• ⭐ ${session.rating}/5` : ''}
+                  ðŸ“… ${new Date(session.session_date).toLocaleDateString()} 
+                  ${session.duration_minutes ? `â€¢ â±ï¸ ${session.duration_minutes} min` : ''}
+                  ${session.rating ? `â€¢ â­ ${session.rating}/5` : ''}
                 </div>
               </div>
               <div style="display: flex; gap: 6px;">
                 <button class="btnSmall" onclick="viewSessionDetails(${session.id})">View</button>
-                <button class="btnSmall" style="background: rgba(255,107,157,0.2); border-color: #ff6b9d; color: #ff6b9d;" onclick="deleteWorkoutSession(${session.id})">Delete</button>
+                <button class="btnSmall" style="background: rgba(212,93,93,0.15); border-color: #d45d5d; color: #d45d5d;" onclick="deleteWorkoutSession(${session.id})">Delete</button>
               </div>
             </div>
           </div>
@@ -1880,7 +1880,7 @@
         const exercises = res.exercises;
 
         const isCompleted = session.completed_at !== null;
-        const statusIcon = isCompleted ? '✅' : '⏳';
+        const statusIcon = isCompleted ? 'âœ…' : 'â³';
         const statusColor = isCompleted ? '#4ade80' : '#f59e0b';
 
         let detailsHTML = `
@@ -1896,32 +1896,32 @@
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-top: 12px;">
               <div style="background: var(--panel); padding: 8px; border-radius: 6px; text-align: center;">
                 <div style="font-size: 12px; color: var(--muted);">Date</div>
-                <div style="font-weight: 600; margin-top: 4px;">📅 ${new Date(session.session_date).toLocaleDateString()}</div>
+                <div style="font-weight: 600; margin-top: 4px;">ðŸ“… ${new Date(session.session_date).toLocaleDateString()}</div>
               </div>
               ${session.duration_minutes ? `
               <div style="background: var(--panel); padding: 8px; border-radius: 6px; text-align: center;">
                 <div style="font-size: 12px; color: var(--muted);">Duration</div>
-                <div style="font-weight: 600; margin-top: 4px;">⏱️ ${session.duration_minutes} min</div>
+                <div style="font-weight: 600; margin-top: 4px;">â±ï¸ ${session.duration_minutes} min</div>
               </div>
               ` : ''}
               ${session.rating ? `
               <div style="background: var(--panel); padding: 8px; border-radius: 6px; text-align: center;">
                 <div style="font-size: 12px; color: var(--muted);">Rating</div>
-                <div style="font-weight: 600; margin-top: 4px;">⭐ ${session.rating}/5</div>
+                <div style="font-weight: 600; margin-top: 4px;">â­ ${session.rating}/5</div>
               </div>
               ` : ''}
             </div>
             
             ${session.notes ? `
             <div style="background: var(--panel); padding: 8px; border-radius: 6px; margin-top: 12px;">
-              <div style="font-size: 12px; color: var(--muted); margin-bottom: 4px;">📝 Notes</div>
+              <div style="font-size: 12px; color: var(--muted); margin-bottom: 4px;">ðŸ“ Notes</div>
               <div style="font-size: 13px;">${escapeHtml(session.notes)}</div>
             </div>
             ` : ''}
           </div>
           
           <div style="border-top: 1px solid var(--border); padding-top: 16px;">
-            <div style="font-weight: 600; margin-bottom: 12px;">💪 Exercises (${exercises.length})</div>
+            <div style="font-weight: 600; margin-bottom: 12px;">ðŸ’ª Exercises (${exercises.length})</div>
             ${exercises.length === 0 ? `
               <div style="text-align: center; color: var(--muted); padding: 20px; background: var(--panel); border-radius: 6px;">
                 No exercises logged yet
@@ -1935,19 +1935,19 @@
               <div style="margin-bottom: 12px; padding: 12px; background: ${completedBg}; border-left: 3px solid ${completedBorder}; border-radius: 6px;">
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
                   <div>
-                    <div style="font-weight: 600; font-size: 14px;">${isLogged ? '✓' : '○'} ${escapeHtml(ex.exercise_name)}</div>
+                    <div style="font-weight: 600; font-size: 14px;">${isLogged ? 'âœ“' : 'â—‹'} ${escapeHtml(ex.exercise_name)}</div>
                   </div>
                 </div>
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px;">
                   <div>
                     <div style="color: var(--muted);">Planned</div>
-                    <div style="font-weight: 600; margin-top: 2px;">${ex.planned_sets}×${ex.planned_reps}</div>
+                    <div style="font-weight: 600; margin-top: 2px;">${ex.planned_sets}Ã—${ex.planned_reps}</div>
                   </div>
                   <div>
                     <div style="color: var(--muted);">Completed</div>
                     <div style="font-weight: 600; margin-top: 2px; color: ${isLogged ? '#4ade80' : '#999'};">
-                      ${isLogged ? `${ex.completed_sets}×${ex.completed_reps || ''}` : '—'}
+                      ${isLogged ? `${ex.completed_sets}Ã—${ex.completed_reps || ''}` : 'â€”'}
                     </div>
                   </div>
                 </div>
@@ -1957,13 +1957,13 @@
                   ${ex.weight_used ? `
                   <div>
                     <div style="color: var(--muted);">Weight</div>
-                    <div style="font-weight: 600; margin-top: 2px;">⚖️ ${ex.weight_used} lbs</div>
+                    <div style="font-weight: 600; margin-top: 2px;">âš–ï¸ ${ex.weight_used} lbs</div>
                   </div>
                   ` : ''}
                   ${ex.rpe ? `
                   <div>
                     <div style="color: var(--muted);">RPE</div>
-                    <div style="font-weight: 600; margin-top: 2px;">🔥 ${ex.rpe}/10</div>
+                    <div style="font-weight: 600; margin-top: 2px;">ðŸ”¥ ${ex.rpe}/10</div>
                   </div>
                   ` : ''}
                 </div>
@@ -1978,8 +1978,8 @@
 
         // Add delete button to the modal
         const deleteBtn = document.createElement("button");
-        deleteBtn.textContent = "🗑️ Delete";
-        deleteBtn.style.cssText = "padding: 8px 16px; background: rgba(255,107,157,0.2); border: 1px solid #ff6b9d; color: #ff6b9d; border-radius: 4px; cursor: pointer; font-size: 13px; margin-top: 12px;";
+        deleteBtn.textContent = "ðŸ—‘ï¸ Delete";
+        deleteBtn.style.cssText = "padding: 8px 16px; background: rgba(212,93,93,0.15); border: 1px solid #d45d5d; color: #d45d5d; border-radius: 4px; cursor: pointer; font-size: 13px; margin-top: 12px;";
         deleteBtn.onclick = () => {
           deleteWorkoutSession(sessionId);
           document.getElementById("messageOverlay").style.display = "none";
@@ -2063,8 +2063,8 @@
     if (!abandonBtn) {
       abandonBtn = document.createElement("button");
       abandonBtn.id = "abandonWorkoutExecBtn";
-      abandonBtn.style.cssText = "padding: 8px 16px; background: rgba(255,107,157,0.2); border: 1px solid #ff6b9d; color: #ff6b9d; border-radius: 4px; cursor: pointer; font-size: 13px; margin-left: 8px;";
-      abandonBtn.textContent = "🗑️ Abandon";
+      abandonBtn.style.cssText = "padding: 8px 16px; background: rgba(212,93,93,0.15); border: 1px solid #d45d5d; color: #d45d5d; border-radius: 4px; cursor: pointer; font-size: 13px; margin-left: 8px;";
+      abandonBtn.textContent = "ðŸ—‘ï¸ Abandon";
       closeBtn.parentNode.appendChild(abandonBtn);
     }
 
@@ -2091,7 +2091,7 @@
         if (data.success || res.ok) {
           modal.style.display = "none";
           checkForIncompleteWorkout();
-          showMessageModal("✅ Workout Abandoned", "The workout has been deleted.", true);
+          showMessageModal("âœ… Workout Abandoned", "The workout has been deleted.", true);
         }
       } catch (e) {
         alert("Error: " + e.message);
@@ -2144,7 +2144,7 @@
         const completeData = await completeRes.json();
         if (completeData.success) {
           modal.style.display = "none";
-          alert("✅ Workout completed! Your progress has been saved.");
+          alert("âœ… Workout completed! Your progress has been saved.");
           loadWorkoutHistory();
           loadProgressStats();
         }
@@ -2153,7 +2153,7 @@
         alert("Error saving workout: " + e.message);
       } finally {
         completeBtn.disabled = false;
-        completeBtn.textContent = "✓ Finish";
+        completeBtn.textContent = "âœ“ Finish";
       }
     };
   };
@@ -2217,7 +2217,7 @@
         onmouseover="this.style.borderColor='var(--accent)'" 
         onmouseout="this.style.borderColor='var(--border)'" 
         onclick="window.viewExerciseDetails(${ex.id})">
-        <div style="font-size: 28px; margin-bottom: 8px;">🏋️</div>
+        <div style="font-size: 28px; margin-bottom: 8px;">ðŸ‹ï¸</div>
         <h3 style="margin: 0 0 4px 0; color: var(--text);">${escapeHtml(ex.name)}</h3>
         <p style="margin: 0 0 8px 0; font-size: 12px; color: var(--muted);">${escapeHtml(ex.muscle_group)}</p>
         <p style="margin: 0 0 12px 0; font-size: 12px; color: var(--text); line-height: 1.4;">${ex.description ? escapeHtml(ex.description.substring(0, 80)) + '...' : 'No description'}</p>
@@ -2256,19 +2256,19 @@
               <p style="margin: 0 0 12px 0; font-size: 13px; color: var(--muted); line-height: 1.5;">${escapeHtml(video.description || '')}</p>
 
               <div style="background: var(--bg); padding: 12px; border-radius: 6px; margin-bottom: 12px;">
-                <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: bold; color: var(--accent);">💡 Form Tips:</p>
+                <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: bold; color: var(--accent);">ðŸ’¡ Form Tips:</p>
                 <p style="margin: 0; font-size: 12px; color: var(--text); line-height: 1.5; white-space: pre-wrap;">${escapeHtml(video.form_tips || 'No tips available')}</p>
               </div>
 
               <div style="background: var(--bg); padding: 12px; border-radius: 6px;">
-                <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: bold; color: #ff6b9d;">❌ Common Mistakes:</p>
+                <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: bold; color: #d45d5d;">âŒ Common Mistakes:</p>
                 <p style="margin: 0; font-size: 12px; color: var(--text); line-height: 1.5; white-space: pre-wrap;">${escapeHtml(video.common_mistakes || 'None listed')}</p>
               </div>
 
               <div style="display: flex; gap: 8px; margin-top: 12px; font-size: 11px; color: var(--muted);">
-                <span>⏱️ ${video.duration_seconds ? Math.round(video.duration_seconds / 60) + ' min' : 'N/A'}</span>
-                <span>👁️ ${video.views || 0} views</span>
-                <span>📊 ${video.difficulty_level}</span>
+                <span>â±ï¸ ${video.duration_seconds ? Math.round(video.duration_seconds / 60) + ' min' : 'N/A'}</span>
+                <span>ðŸ‘ï¸ ${video.views || 0} views</span>
+                <span>ðŸ“Š ${video.difficulty_level}</span>
               </div>
             </div>
           </div>

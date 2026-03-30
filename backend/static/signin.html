@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Sign In - SculpFit</title>
 
-    <link rel="stylesheet" href="/static/styles.css?v=5">
+    <link rel="stylesheet" href="/static/styles.css?v=7">
     <style>
         .signinContainer {
             min-height: 100vh;
@@ -88,15 +88,15 @@
             display: flex;
             gap: 12px;
             padding: 16px;
-            background: rgba(110, 255, 232, 0.05);
-            border: 1px solid rgba(110, 255, 232, 0.15);
+            background: rgba(224, 145, 69, 0.04);
+            border: 1px solid rgba(224, 145, 69, 0.1);
             border-radius: 8px;
             transition: all 0.3s ease;
         }
 
         .featureItem:hover {
-            background: rgba(110, 255, 232, 0.1);
-            border-color: rgba(110, 255, 232, 0.25);
+            background: rgba(224, 145, 69, 0.07);
+            border-color: rgba(224, 145, 69, 0.2);
         }
 
         .featureIcon {
@@ -119,8 +119,8 @@
         }
 
         .welcomeValue {
-            background: rgba(110, 255, 232, 0.08);
-            border: 1px solid rgba(110, 255, 232, 0.2);
+            background: rgba(224, 145, 69, 0.04);
+            border: 1px solid rgba(224, 145, 69, 0.12);
             border-radius: 8px;
             padding: 16px;
         }
@@ -129,7 +129,7 @@
             font-size: 13px;
             font-weight: 600;
             margin: 0 0 8px 0;
-            color: #6effe8;
+            color: #e09145;
         }
 
         .welcomeValue ul {
@@ -150,7 +150,7 @@
             content: "✓";
             position: absolute;
             left: 0;
-            color: #6effe8;
+            color: #e09145;
             font-weight: bold;
         }
 
@@ -246,7 +246,7 @@
             width: 20px;
             height: 20px;
             border: 3px solid var(--muted);
-            border-top-color: var(--accent);
+            border-top-color: #e09145;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
@@ -277,18 +277,18 @@
 
         /* Customize Clerk widget to match design */
         .cl-formButtonPrimary {
-            background: var(--accent) !important;
-            color: var(--bg) !important;
+            background: #ff4d00 !important;
+            color: #fff !important;
             font-weight: 600 !important;
         }
 
         .cl-formButtonPrimary:hover,
         .cl-formButtonPrimary:focus {
-            background: #5ee9de !important;
+            background: #ff6a00 !important;
         }
 
         .cl-footerActionLink {
-            color: var(--accent) !important;
+            color: #ff4d00 !important;
         }
 
         .cl-internal-hslayer {
@@ -475,28 +475,28 @@
                         appearance: {
                             baseTheme: undefined,
                             variables: {
-                                colorPrimary: '#6effe8',
-                                colorBackground: '#151d3a',
-                                colorInputBackground: '#0f1438',
-                                colorInputBorder: 'rgba(255, 255, 255, 0.08)',
-                                colorText: '#f0f4ff',
-                                colorTextSecondary: '#a8b5d1',
+                                colorPrimary: '#e09145',
+                                colorBackground: '#1a1a1a',
+                                colorInputBackground: '#141414',
+                                colorInputBorder: 'rgba(255, 255, 255, 0.07)',
+                                colorText: '#e8e8e8',
+                                colorTextSecondary: '#999',
                             },
                             elements: {
                                 rootBox: 'padding: 0;',
-                                cardBox: 'border: 1px solid rgba(255, 255, 255, 0.08); background: transparent;',
-                                footerActionLink: 'color: #6effe8;',
-                                formFieldInput: 'background: #0f1438; border-color: rgba(255, 255, 255, 0.08); color: #f0f4ff;',
-                                formFieldInputPlaceholder: 'color: #a8b5d1;',
-                                button: 'background: #6effe8; color: #0a0e27; font-weight: 600;',
-                                buttonPrimary: 'background: #6effe8; color: #0a0e27;',
+                                cardBox: 'border: 1px solid rgba(255, 255, 255, 0.07); background: transparent;',
+                                footerActionLink: 'color: #e09145;',
+                                formFieldInput: 'background: #141414; border-color: rgba(255, 255, 255, 0.07); color: #e8e8e8;',
+                                formFieldInputPlaceholder: 'color: #999;',
+                                button: 'background: #e09145; color: #fff; font-weight: 600;',
+                                buttonPrimary: 'background: #e09145; color: #fff;',
                             }
                         }
                     });
                 } catch (error) {
                     console.error('Sign-in initialization error:', error);
                     const signinState = document.getElementById('signinState');
-                    signinState.innerHTML = '<div style="color: #ff6b9d; text-align: center;"><p>Error loading sign-in. Please refresh the page.</p><pre style="text-align: left; font-size: 12px; overflow: auto;">' + error.message + '</pre></div>';
+                    signinState.innerHTML = '<div style="color: #d45d5d; text-align: center;"><p>Error loading sign-in. Please refresh the page.</p><pre style="text-align: left; font-size: 12px; overflow: auto;">' + error.message + '</pre></div>';
                 }
             }
 
