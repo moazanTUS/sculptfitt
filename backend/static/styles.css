@@ -1083,8 +1083,230 @@ p {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border);
   border-radius: 12px;
-  white-space: pre-wrap;
+  white-space: normal;
   word-break: break-word;
+}
+
+.workoutDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.workoutDetailsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.workoutDetailsTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #f3f6ff;
+  line-height: 1.2;
+}
+
+.workoutDetailsSubtitle {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.workoutStatus {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.workoutStatus.completed {
+  color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.6);
+  background: rgba(74, 222, 128, 0.08);
+}
+
+.workoutStatus.inprogress {
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.65);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.workoutStatsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.workoutStatCard {
+  margin: 0;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.workoutStatLabel {
+  margin: 0;
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.45px;
+}
+
+.workoutStatValue {
+  margin: 6px 0 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #eef2ff;
+}
+
+.workoutNotesCard {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.workoutNotesLabel {
+  margin: 0;
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.workoutNotesText {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #e3e9ff;
+}
+
+.workoutExerciseSection {
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+
+.workoutExerciseHeading {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: #f0f4ff;
+}
+
+.workoutEmptyState {
+  padding: 16px;
+  text-align: center;
+  border-radius: 10px;
+  border: 1px dashed var(--border);
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.workoutExerciseCard {
+  margin-bottom: 10px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  border-left: 4px solid #7a7a7a;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.workoutExerciseCard.logged {
+  border-left-color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.35);
+  background: rgba(74, 222, 128, 0.06);
+}
+
+.workoutExerciseTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.workoutExerciseName {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #f0f4ff;
+}
+
+.workoutExerciseState {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.45px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.workoutExerciseCard.logged .workoutExerciseState {
+  color: #4ade80;
+}
+
+.workoutExerciseMetrics {
+  margin-top: 9px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.workoutMetricLabel {
+  margin: 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.workoutMetricValue {
+  margin: 2px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #e9eeff;
+}
+
+.workoutMetricValue.ok {
+  color: #4ade80;
+}
+
+.workoutMetricValue.muted {
+  color: var(--muted);
+}
+
+.workoutDeleteBtn {
+  margin-top: 10px;
+  background: rgba(212, 93, 93, 0.15);
+  border: 1px solid #d45d5d;
+  color: #ffb1b1;
+}
+
+.workoutDeleteBtn:hover {
+  background: rgba(212, 93, 93, 0.25);
+  border-color: #f07a7a;
+}
+
+@media (max-width: 480px) {
+  .workoutDetailsTitle {
+    font-size: 16px;
+  }
+
+  .workoutStatsGrid,
+  .workoutExerciseMetrics {
+    grid-template-columns: 1fr;
+  }
+
+  .workoutExerciseTop {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 
 /* Radio button styling */

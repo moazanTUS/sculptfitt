@@ -3763,194 +3763,82 @@
 
         const isCompleted = session.completed_at !== null;
         const statusLabel = isCompleted ? 'Completed' : 'In Progress';
-        const statusColor = isCompleted ? '#4ade80' : '#f59e0b';
-
-
-
-        let detailsHTML = `
-
-          <div style="margin-bottom: 22px;">
-
-            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px;">
-
+        const detailsHTML = `
+          <section class="workoutDetails">
+            <header class="workoutDetailsHeader">
               <div>
-
-                <div style="font-size: 18px; font-weight: 700; margin: 0; line-height: 1.2;">${escapeHtml(session.workout_name)}</div>
-
-                <div style="font-size: 12px; color: var(--muted); margin: 5px 0 0 0;">Day ${session.day_number}</div>
-
+                <p class="workoutDetailsTitle">${escapeHtml(session.workout_name)}</p>
+                <p class="workoutDetailsSubtitle">Day ${session.day_number}</p>
               </div>
+              <span class="workoutStatus ${isCompleted ? 'completed' : 'inprogress'}">${statusLabel}</span>
+            </header>
 
-              <div style="padding: 6px 10px; border-radius: 999px; border: 1px solid ${statusColor}; color: ${statusColor}; font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; white-space: nowrap;">
-
-                ${statusLabel}
-
-              </div>
-
-            </div>
-
-            
-
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-top: 12px;">
-
-              <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border: 1px solid var(--border); text-align: center;">
-
-                <div style="font-size: 12px; color: var(--muted);">Date</div>
-
-                <div style="font-weight: 700; margin-top: 5px;">${new Date(session.session_date).toLocaleDateString()}</div>
-
-              </div>
-
+            <div class="workoutStatsGrid">
+              <article class="workoutStatCard">
+                <p class="workoutStatLabel">Date</p>
+                <p class="workoutStatValue">${new Date(session.session_date).toLocaleDateString()}</p>
+              </article>
               ${session.duration_minutes ? `
-
-              <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border: 1px solid var(--border); text-align: center;">
-
-                <div style="font-size: 12px; color: var(--muted);">Duration</div>
-
-                <div style="font-weight: 700; margin-top: 5px;">${session.duration_minutes} min</div>
-
-              </div>
-
+                <article class="workoutStatCard">
+                  <p class="workoutStatLabel">Duration</p>
+                  <p class="workoutStatValue">${session.duration_minutes} min</p>
+                </article>
               ` : ''}
-
               ${session.rating ? `
-
-              <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border: 1px solid var(--border); text-align: center;">
-
-                <div style="font-size: 12px; color: var(--muted);">Rating</div>
-
-                <div style="font-weight: 700; margin-top: 5px;">${session.rating}/5</div>
-
-              </div>
-
+                <article class="workoutStatCard">
+                  <p class="workoutStatLabel">Rating</p>
+                  <p class="workoutStatValue">${session.rating}/5</p>
+                </article>
               ` : ''}
-
             </div>
-
-            
 
             ${session.notes ? `
-
-            <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; margin-top: 12px; border: 1px solid var(--border);">
-
-              <div style="font-size: 12px; color: var(--muted); margin-bottom: 4px;">&#128221; Notes</div>
-
-              <div style="font-size: 13px;">${escapeHtml(session.notes)}</div>
-
-            </div>
-
+              <article class="workoutNotesCard">
+                <p class="workoutNotesLabel">Coach Notes</p>
+                <p class="workoutNotesText">${escapeHtml(session.notes)}</p>
+              </article>
             ` : ''}
 
-          </div>
-
-          
-
-          <div style="border-top: 1px solid var(--border); padding-top: 16px;">
-
-            <div style="font-weight: 700; margin-bottom: 12px; font-size: 14px; letter-spacing: 0.3px;">Exercises (${exercises.length})</div>
-
-            ${exercises.length === 0 ? `
-
-              <div style="text-align: center; color: var(--muted); padding: 20px; background: rgba(255,255,255,0.03); border: 1px dashed var(--border); border-radius: 8px;">
-
-                No exercises logged yet
-
-              </div>
-
-            ` : exercises.map((ex, idx) => {
-
+            <section class="workoutExerciseSection">
+              <p class="workoutExerciseHeading">Exercises (${exercises.length})</p>
+              ${exercises.length === 0 ? `
+                <div class="workoutEmptyState">No exercises logged yet.</div>
+              ` : exercises.map((ex, idx) => {
           const isLogged = ex.completed_sets > 0;
-
-          const completedBg = isLogged ? 'rgba(74, 222, 128, 0.08)' : 'rgba(255,255,255,0.03)';
-          const completedBorder = isLogged ? '#4ade80' : 'var(--border)';
-
-
-
           return `
+                <article class="workoutExerciseCard ${isLogged ? 'logged' : 'pending'}">
+                  <div class="workoutExerciseTop">
+                    <p class="workoutExerciseName">${idx + 1}. ${escapeHtml(ex.exercise_name)}</p>
+                    <span class="workoutExerciseState">${isLogged ? 'Logged' : 'Pending'}</span>
+                  </div>
 
-              <div style="margin-bottom: 12px; padding: 12px; background: ${completedBg}; border: 1px solid ${completedBorder}; border-left: 4px solid ${isLogged ? '#4ade80' : '#7b7b7b'}; border-radius: 8px;">
-
-                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
-
-                  <div>
-
-                    <div style="font-weight: 700; font-size: 14px;">${idx + 1}. ${escapeHtml(ex.exercise_name)}</div>
-                    <div style="font-size: 11px; color: ${isLogged ? '#4ade80' : 'var(--muted)'}; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.4px;">
-                      ${isLogged ? 'Logged' : 'Pending'}
+                  <div class="workoutExerciseMetrics">
+                    <div>
+                      <p class="workoutMetricLabel">Planned</p>
+                      <p class="workoutMetricValue">${ex.planned_sets} x ${ex.planned_reps}</p>
                     </div>
-
-                  </div>
-
-                </div>
-
-                
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px;">
-
-                  <div>
-
-                    <div style="color: var(--muted);">Planned</div>
-
-                    <div style="font-weight: 700; margin-top: 2px;">${ex.planned_sets} x ${ex.planned_reps}</div>
-
-                  </div>
-
-                  <div>
-
-                    <div style="color: var(--muted);">Completed</div>
-
-                    <div style="font-weight: 700; margin-top: 2px; color: ${isLogged ? '#4ade80' : 'var(--muted)'};">
-
-                      ${isLogged ? `${ex.completed_sets} x ${ex.completed_reps || ''}` : 'Not logged'}
-
+                    <div>
+                      <p class="workoutMetricLabel">Completed</p>
+                      <p class="workoutMetricValue ${isLogged ? 'ok' : 'muted'}">${isLogged ? `${ex.completed_sets} x ${ex.completed_reps || ''}` : 'Not logged'}</p>
                     </div>
-
+                    ${ex.weight_used ? `
+                      <div>
+                        <p class="workoutMetricLabel">Weight</p>
+                        <p class="workoutMetricValue">${ex.weight_used} lbs</p>
+                      </div>
+                    ` : ''}
+                    ${ex.rpe ? `
+                      <div>
+                        <p class="workoutMetricLabel">RPE</p>
+                        <p class="workoutMetricValue">${ex.rpe}/10</p>
+                      </div>
+                    ` : ''}
                   </div>
-
-                </div>
-
-                
-
-                ${ex.weight_used || ex.rpe ? `
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; margin-top: 8px;">
-
-                  ${ex.weight_used ? `
-
-                  <div>
-
-                    <div style="color: var(--muted);">Weight</div>
-
-                    <div style="font-weight: 700; margin-top: 2px;">${ex.weight_used} lbs</div>
-
-                  </div>
-
-                  ` : ''}
-
-                  ${ex.rpe ? `
-
-                  <div>
-
-                    <div style="color: var(--muted);">RPE</div>
-
-                    <div style="font-weight: 700; margin-top: 2px;">${ex.rpe}/10</div>
-
-                  </div>
-
-                  ` : ''}
-
-                </div>
-
-                ` : ''}
-
-              </div>
-
+                </article>
               `;
-
         }).join('')}
-
-          </div>
-
+            </section>
+          </section>
         `;
 
 
@@ -3963,9 +3851,8 @@
 
         const deleteBtn = document.createElement("button");
 
-        deleteBtn.textContent = "🗑️ Delete";
-
-        deleteBtn.style.cssText = "padding: 8px 16px; background: rgba(212,93,93,0.15); border: 1px solid #d45d5d; color: #d45d5d; border-radius: 4px; cursor: pointer; font-size: 13px; margin-top: 12px;";
+        deleteBtn.textContent = "Delete Workout";
+        deleteBtn.className = "btn workoutDeleteBtn";
 
         deleteBtn.onclick = () => {
 
