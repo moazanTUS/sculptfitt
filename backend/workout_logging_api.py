@@ -196,6 +196,7 @@ def register_workout_logging_routes(app, current_user):
     ):
         """Log completion of an exercise in a workout session"""
         try:
+            pr_date = date.today() if weight_used is not None else None
             with get_conn() as conn:
                 with conn.cursor() as cur:
                     # Verify session belongs to user
@@ -234,9 +235,19 @@ def register_workout_logging_routes(app, current_user):
                         ON DUPLICATE KEY UPDATE
                         total_times_completed = total_times_completed + 1,
                         last_completed_date = %s,
-                        personal_record_weight = GREATEST(COALESCE(personal_record_weight, 0), %s)
+                        personal_record_weight = CASE
+                            WHEN %s IS NULL THEN personal_record_weight
+                            WHEN personal_record_weight IS NULL OR %s > personal_record_weight THEN %s
+                            ELSE personal_record_weight
+                        END,
+                        personal_record_date = CASE
+                            WHEN %s IS NULL THEN personal_record_date
+                            WHEN personal_record_weight IS NULL OR %s > personal_record_weight THEN %s
+                            ELSE personal_record_date
+                        END
                     """, (user["clerk_user_id"], ex_id, ex_name, weight_used, date.today(), 
-                          date.today(), date.today(), weight_used or 0))
+                          date.today(), pr_date, weight_used, weight_used,
+                          weight_used, weight_used, pr_date))
                     
                     conn.commit()
                     
