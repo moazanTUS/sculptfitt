@@ -3700,13 +3700,13 @@
 
         historyEl.innerHTML = res.sessions.map(session => `
 
-          <div style="background: var(--panel); padding: 12px; border-radius: 6px; border-left: 3px solid ${session.completed_at ? 'var(--accent)' : '#666'};">
+          <div style="background: var(--panel); padding: 14px; border-radius: 10px; border: 1px solid var(--border); border-left: 4px solid ${session.completed_at ? 'var(--accent)' : '#7b7b7b'}; margin-bottom: 10px;">
 
-            <div style="display: flex; justify-content: space-between; align-items: start;">
+            <div style="display: flex; justify-content: space-between; align-items: start; gap: 10px;">
 
               <div>
 
-                <div style="font-weight: 500;">${escapeHtml(session.workout_name)} - Day ${session.day_number}</div>
+                <div style="font-weight: 600; font-size: 14px;">${escapeHtml(session.workout_name)} - Day ${session.day_number}</div>
 
                 <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">
 
@@ -3714,7 +3714,8 @@
 
                   ${session.duration_minutes ? `• ⏱️ ${session.duration_minutes} min` : ''}
 
-                  ${session.rating ? `• ⭐️ ${session.rating}/5` : ''}
+                  ${session.rating ? `• Rating ${session.rating}/5` : ''}
+                  ${session.completed_at ? '• Completed' : '• In progress'}
 
                 </div>
 
@@ -3761,26 +3762,28 @@
 
 
         const isCompleted = session.completed_at !== null;
-
-        const statusIcon = isCompleted ? '✅' : 'â³';
-
+        const statusLabel = isCompleted ? 'Completed' : 'In Progress';
         const statusColor = isCompleted ? '#4ade80' : '#f59e0b';
 
 
 
         let detailsHTML = `
 
-          <div style="margin-bottom: 24px;">
+          <div style="margin-bottom: 22px;">
 
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-
-              <div style="font-size: 32px;">${statusIcon}</div>
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px;">
 
               <div>
 
-                <div style="font-size: 16px; font-weight: 600; margin: 0;">${escapeHtml(session.workout_name)}</div>
+                <div style="font-size: 18px; font-weight: 700; margin: 0; line-height: 1.2;">${escapeHtml(session.workout_name)}</div>
 
-                <div style="font-size: 12px; color: var(--muted); margin: 4px 0 0 0;">Day ${session.day_number}</div>
+                <div style="font-size: 12px; color: var(--muted); margin: 5px 0 0 0;">Day ${session.day_number}</div>
+
+              </div>
+
+              <div style="padding: 6px 10px; border-radius: 999px; border: 1px solid ${statusColor}; color: ${statusColor}; font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; white-space: nowrap;">
+
+                ${statusLabel}
 
               </div>
 
@@ -3788,23 +3791,23 @@
 
             
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-top: 12px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-top: 12px;">
 
-              <div style="background: var(--panel); padding: 8px; border-radius: 6px; text-align: center;">
+              <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border: 1px solid var(--border); text-align: center;">
 
                 <div style="font-size: 12px; color: var(--muted);">Date</div>
 
-                <div style="font-weight: 600; margin-top: 4px;">📅 ${new Date(session.session_date).toLocaleDateString()}</div>
+                <div style="font-weight: 700; margin-top: 5px;">${new Date(session.session_date).toLocaleDateString()}</div>
 
               </div>
 
               ${session.duration_minutes ? `
 
-              <div style="background: var(--panel); padding: 8px; border-radius: 6px; text-align: center;">
+              <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border: 1px solid var(--border); text-align: center;">
 
                 <div style="font-size: 12px; color: var(--muted);">Duration</div>
 
-                <div style="font-weight: 600; margin-top: 4px;">⏱️ ${session.duration_minutes} min</div>
+                <div style="font-weight: 700; margin-top: 5px;">${session.duration_minutes} min</div>
 
               </div>
 
@@ -3812,11 +3815,11 @@
 
               ${session.rating ? `
 
-              <div style="background: var(--panel); padding: 8px; border-radius: 6px; text-align: center;">
+              <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border: 1px solid var(--border); text-align: center;">
 
                 <div style="font-size: 12px; color: var(--muted);">Rating</div>
 
-                <div style="font-weight: 600; margin-top: 4px;">⭐️ ${session.rating}/5</div>
+                <div style="font-weight: 700; margin-top: 5px;">${session.rating}/5</div>
 
               </div>
 
@@ -3828,7 +3831,7 @@
 
             ${session.notes ? `
 
-            <div style="background: var(--panel); padding: 8px; border-radius: 6px; margin-top: 12px;">
+            <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; margin-top: 12px; border: 1px solid var(--border);">
 
               <div style="font-size: 12px; color: var(--muted); margin-bottom: 4px;">&#128221; Notes</div>
 
@@ -3844,11 +3847,11 @@
 
           <div style="border-top: 1px solid var(--border); padding-top: 16px;">
 
-            <div style="font-weight: 600; margin-bottom: 12px;">💪 Exercises (${exercises.length})</div>
+            <div style="font-weight: 700; margin-bottom: 12px; font-size: 14px; letter-spacing: 0.3px;">Exercises (${exercises.length})</div>
 
             ${exercises.length === 0 ? `
 
-              <div style="text-align: center; color: var(--muted); padding: 20px; background: var(--panel); border-radius: 6px;">
+              <div style="text-align: center; color: var(--muted); padding: 20px; background: rgba(255,255,255,0.03); border: 1px dashed var(--border); border-radius: 8px;">
 
                 No exercises logged yet
 
@@ -3858,21 +3861,23 @@
 
           const isLogged = ex.completed_sets > 0;
 
-          const completedBg = isLogged ? 'rgba(74, 222, 128, 0.1)' : 'rgba(200, 200, 200, 0.1)';
-
-          const completedBorder = isLogged ? '#4ade80' : '#999';
+          const completedBg = isLogged ? 'rgba(74, 222, 128, 0.08)' : 'rgba(255,255,255,0.03)';
+          const completedBorder = isLogged ? '#4ade80' : 'var(--border)';
 
 
 
           return `
 
-              <div style="margin-bottom: 12px; padding: 12px; background: ${completedBg}; border-left: 3px solid ${completedBorder}; border-radius: 6px;">
+              <div style="margin-bottom: 12px; padding: 12px; background: ${completedBg}; border: 1px solid ${completedBorder}; border-left: 4px solid ${isLogged ? '#4ade80' : '#7b7b7b'}; border-radius: 8px;">
 
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
 
                   <div>
 
-                    <div style="font-weight: 600; font-size: 14px;">${isLogged ? '✓' : '○'} ${escapeHtml(ex.exercise_name)}</div>
+                    <div style="font-weight: 700; font-size: 14px;">${idx + 1}. ${escapeHtml(ex.exercise_name)}</div>
+                    <div style="font-size: 11px; color: ${isLogged ? '#4ade80' : 'var(--muted)'}; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.4px;">
+                      ${isLogged ? 'Logged' : 'Pending'}
+                    </div>
 
                   </div>
 
@@ -3886,7 +3891,7 @@
 
                     <div style="color: var(--muted);">Planned</div>
 
-                    <div style="font-weight: 600; margin-top: 2px;">${ex.planned_sets}×${ex.planned_reps}</div>
+                    <div style="font-weight: 700; margin-top: 2px;">${ex.planned_sets} x ${ex.planned_reps}</div>
 
                   </div>
 
@@ -3894,9 +3899,9 @@
 
                     <div style="color: var(--muted);">Completed</div>
 
-                    <div style="font-weight: 600; margin-top: 2px; color: ${isLogged ? '#4ade80' : '#999'};">
+                    <div style="font-weight: 700; margin-top: 2px; color: ${isLogged ? '#4ade80' : 'var(--muted)'};">
 
-                      ${isLogged ? `${ex.completed_sets}×${ex.completed_reps || ''}` : '—'}
+                      ${isLogged ? `${ex.completed_sets} x ${ex.completed_reps || ''}` : 'Not logged'}
 
                     </div>
 
@@ -3916,7 +3921,7 @@
 
                     <div style="color: var(--muted);">Weight</div>
 
-                    <div style="font-weight: 600; margin-top: 2px;">⚖️ ${ex.weight_used} lbs</div>
+                    <div style="font-weight: 700; margin-top: 2px;">${ex.weight_used} lbs</div>
 
                   </div>
 
@@ -3928,7 +3933,7 @@
 
                     <div style="color: var(--muted);">RPE</div>
 
-                    <div style="font-weight: 600; margin-top: 2px;">🔥 ${ex.rpe}/10</div>
+                    <div style="font-weight: 700; margin-top: 2px;">${ex.rpe}/10</div>
 
                   </div>
 
