@@ -40,44 +40,53 @@ class TestCustomWorkoutsAPI:
             result = cur.fetchone()
             assert result["count"] == 1
     
-    @pytest.mark.skip(reason="Update/delete endpoints need checking")
-    def test_update_custom_workout(self, client, mock_clerk_user):
-        """Should update existing workout"""
-        # Create workout first
-        create_response = client.post("/api/custom-workouts", json={
-            "name": "Original Name",
-            "description": "Original description",
-            "exercises": []
-        })
+    def test_add_exercise_to_custom_workout_day(self, client, mock_clerk_user):
+        """Should create a workout and add an exercise to day 1."""
+        create_response = client.post(
+            "/api/custom-workouts",
+            data={
+                "name": "Integration Workout",
+                "description": "Created by integration test",
+                "exercises": "[]",
+            },
+        )
+        assert create_response.status_code == 200
         workout_id = create_response.json()["workout_id"]
-        
-        # Update workout
-        update_response = client.put(f"/api/custom-workouts/{workout_id}", json={
-            "name": "Updated Name",
-            "description": "Updated description",
-            "exercises": []
-        })
-        
-        assert update_response.status_code == 200
-        assert update_response.json()["name"] == "Updated Name"
-    
-    @pytest.mark.skip(reason="Delete endpoint needs checking")
+
+        add_response = client.post(
+            f"/api/custom-workouts/{workout_id}/exercises",
+            data={
+                "day_number": 1,
+                "exercise_name": "Push-up",
+                "sets": 3,
+                "reps": "10",
+                "rest_seconds": 60,
+                "notes": "Integration test",
+            },
+        )
+
+        assert add_response.status_code == 200
+        payload = add_response.json()
+        assert payload.get("success") is True
+        assert payload.get("exercise_id") is not None
+
     def test_delete_custom_workout(self, client, mock_clerk_user):
-        """Should delete workout and return 204"""
-        # Create workout
-        create_response = client.post("/api/custom-workouts", json={
-            "name": "To Be Deleted",
-            "description": "Test",
-            "exercises": []
-        })
+        """Should delete a created workout and make it unavailable afterwards."""
+        create_response = client.post(
+            "/api/custom-workouts",
+            data={
+                "name": "To Be Deleted",
+                "description": "Test delete path",
+                "exercises": "[]",
+            },
+        )
+        assert create_response.status_code == 200
         workout_id = create_response.json()["workout_id"]
-        
-        # Delete workout
+
         delete_response = client.delete(f"/api/custom-workouts/{workout_id}")
-        
-        assert delete_response.status_code == 200 or delete_response.status_code == 204
-        
-        # Verify deletion
+        assert delete_response.status_code == 200
+        assert delete_response.json().get("success") is True
+
         get_response = client.get(f"/api/custom-workouts/{workout_id}")
         assert get_response.status_code == 404
 

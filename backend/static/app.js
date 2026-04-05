@@ -2326,6 +2326,129 @@
 
   }
 
+  function setGuidanceStatus(elementId, message, statusClass = "") {
+    const statusEl = document.getElementById(elementId);
+    if (!statusEl) return;
+    statusEl.textContent = message || "";
+    statusEl.classList.remove("ok", "warn");
+    if (statusClass) statusEl.classList.add(statusClass);
+  }
+
+  function validatePhotoFile(file) {
+    const maxBytes = 10 * 1024 * 1024;
+    const errors = [];
+    const warnings = [];
+
+    if (!file.type || !file.type.startsWith("image/")) {
+      errors.push("Please choose an image file.");
+    }
+
+    if (file.size > maxBytes) {
+      errors.push("Photo is too large. Use a file under 10 MB.");
+    }
+
+    if (file.size < 100 * 1024) {
+      warnings.push("Very small image may reduce posture accuracy.");
+    }
+
+    return { errors, warnings };
+  }
+
+  async function getVideoDuration(file) {
+    return new Promise((resolve) => {
+      const tempVideo = document.createElement("video");
+      const tempUrl = URL.createObjectURL(file);
+      tempVideo.preload = "metadata";
+      tempVideo.onloadedmetadata = () => {
+        const duration = Number(tempVideo.duration) || 0;
+        URL.revokeObjectURL(tempUrl);
+        resolve(duration);
+      };
+      tempVideo.onerror = () => {
+        URL.revokeObjectURL(tempUrl);
+        resolve(0);
+      };
+      tempVideo.src = tempUrl;
+    });
+  }
+
+  async function validateVideoFile(file) {
+    const maxBytes = 120 * 1024 * 1024;
+    const errors = [];
+    const warnings = [];
+    const acceptedMimeTypes = ["video/mp4", "video/webm", "video/quicktime"];
+
+    if (!acceptedMimeTypes.includes(file.type)) {
+      errors.push("Use MP4, MOV, or WEBM video format.");
+    }
+
+    if (file.size > maxBytes) {
+      errors.push("Video is too large. Use a file under 120 MB.");
+    }
+
+    const duration = await getVideoDuration(file);
+    if (duration > 0 && duration < 5) {
+      warnings.push("Short clips under 5 seconds may miss full rep form.");
+    }
+    if (duration > 20) {
+      warnings.push("Long clips over 20 seconds may reduce analysis speed.");
+    }
+
+    return { errors, warnings, duration };
+  }
+
+  document.getElementById("imageInput")?.addEventListener("change", (event) => {
+    const file = event.target?.files?.[0];
+    if (!file) {
+      event.target.dataset.blockingIssue = "false";
+      setGuidanceStatus("photoGuidanceStatus", "");
+      return;
+    }
+
+    const { errors, warnings } = validatePhotoFile(file);
+    if (errors.length) {
+      event.target.dataset.blockingIssue = "true";
+      setGuidanceStatus("photoGuidanceStatus", errors[0], "warn");
+      return;
+    }
+
+    event.target.dataset.blockingIssue = "false";
+    if (warnings.length) {
+      setGuidanceStatus("photoGuidanceStatus", warnings[0], "warn");
+      return;
+    }
+
+    setGuidanceStatus("photoGuidanceStatus", "Photo looks good for analysis.", "ok");
+  });
+
+  document.getElementById("videoInput")?.addEventListener("change", async (event) => {
+    const file = event.target?.files?.[0];
+    if (!file) {
+      event.target.dataset.blockingIssue = "false";
+      setGuidanceStatus("videoGuidanceStatus", "");
+      return;
+    }
+
+    setGuidanceStatus("videoGuidanceStatus", "Checking video quality...");
+    const { errors, warnings, duration } = await validateVideoFile(file);
+
+    if (errors.length) {
+      event.target.dataset.blockingIssue = "true";
+      setGuidanceStatus("videoGuidanceStatus", errors[0], "warn");
+      return;
+    }
+
+    event.target.dataset.blockingIssue = "false";
+    if (warnings.length) {
+      const durationNote = duration > 0 ? ` Clip length: ${duration.toFixed(1)}s.` : "";
+      setGuidanceStatus("videoGuidanceStatus", `${warnings[0]}${durationNote}`, "warn");
+      return;
+    }
+
+    const durationNote = duration > 0 ? ` (${duration.toFixed(1)}s)` : "";
+    setGuidanceStatus("videoGuidanceStatus", `Video looks good for analysis${durationNote}.`, "ok");
+  });
+
 
 
   // Bind buttons
@@ -2388,6 +2511,11 @@
 
       return;
 
+    }
+
+    if (imageInput.dataset.blockingIssue === "true") {
+      imageResult.textContent = "Please fix the upload issue shown above before analyzing.";
+      return;
     }
 
 
@@ -3282,6 +3410,11 @@
 
       return;
 
+    }
+
+    if (videoInput.dataset.blockingIssue === "true") {
+      showMessageModal("Upload Issue", "Please fix the video upload issue shown below the file picker.");
+      return;
     }
 
 

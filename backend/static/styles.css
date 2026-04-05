@@ -1182,6 +1182,44 @@ p {
   letter-spacing: 0.4px;
 }
 
+.captureGuide {
+  border: 1px solid rgba(224, 145, 69, 0.25);
+  background: rgba(224, 145, 69, 0.07);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.captureGuideTitle {
+  margin: 0 0 8px;
+  color: #f3c496;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.2px;
+}
+
+.captureGuideList {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.guidanceStatus {
+  margin: 6px 0 0;
+  min-height: 18px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.guidanceStatus.ok {
+  color: #5ad28f;
+}
+
+.guidanceStatus.warn {
+  color: #f1b05d;
+}
+
 .workoutNotesText {
   margin: 6px 0 0;
   font-size: 13px;

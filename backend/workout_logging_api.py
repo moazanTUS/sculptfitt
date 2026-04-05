@@ -35,7 +35,7 @@ def register_workout_logging_routes(app, current_user):
                     # Get exercises for this workout day
                     if workout_plan_type == 'custom':
                         cur.execute("""
-                            SELECT cwe.id, cwe.exercise_name, cwe.sets, cwe.reps, cwe.rest_seconds, cwe.position
+                            SELECT cwe.exercise_id, cwe.exercise_name, cwe.sets, cwe.reps, cwe.rest_seconds, cwe.position
                             FROM custom_workout_exercises cwe
                             JOIN custom_workout_days cwd ON cwd.id = cwe.custom_day_id
                             WHERE cwd.custom_workout_id = %s AND cwd.day_number = %s
@@ -56,7 +56,8 @@ def register_workout_logging_routes(app, current_user):
                     # Create exercise log entries
                     exercise_logs = []
                     for ex in exercises:
-                        exercise_id = ex.get("id") or ex.get("exercise_id")
+                        # For custom workouts, exercise_id can be NULL when not linked to catalog exercises.
+                        exercise_id = ex.get("exercise_id")
                         exercise_name = ex.get("exercise_name") or ex.get("name")
                         
                         cur.execute("""
@@ -245,9 +246,21 @@ def register_workout_logging_routes(app, current_user):
                             WHEN personal_record_weight IS NULL OR %s > personal_record_weight THEN %s
                             ELSE personal_record_date
                         END
-                    """, (user["clerk_user_id"], ex_id, ex_name, weight_used, date.today(), 
-                          date.today(), pr_date, weight_used, weight_used,
-                          weight_used, weight_used, pr_date))
+                    """, (
+                        user["clerk_user_id"],
+                        ex_id,
+                        ex_name,
+                        weight_used,
+                        pr_date,
+                        date.today(),
+                        date.today(),
+                        weight_used,
+                        weight_used,
+                        weight_used,
+                        weight_used,
+                        weight_used,
+                        pr_date,
+                    ))
                     
                     conn.commit()
                     

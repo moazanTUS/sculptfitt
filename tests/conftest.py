@@ -21,7 +21,7 @@ def test_db_config():
         "user": os.getenv("DB_USER"),
         "password": os.getenv("DB_PASS"),
         "database": os.getenv("DB_NAME"),
-        "port": int(os.getenv("DB_PORT")),
+        "port": int(os.getenv("DB_PORT", "3306")),
     }
 
 
@@ -31,6 +31,10 @@ def db_connection(test_db_config):
     Provide database connection for tests
     Automatically rolls back changes after each test
     """
+    required = ("host", "user", "database")
+    if any(not test_db_config.get(key) for key in required):
+        pytest.skip("Database environment variables are not set for integration DB tests")
+
     conn = pymysql.connect(
         host=test_db_config["host"],
         user=test_db_config["user"],
@@ -43,8 +47,15 @@ def db_connection(test_db_config):
     yield conn
     
     # Rollback any changes and close
-    conn.rollback()
-    conn.close()
+    try:
+        conn.rollback()
+    except Exception:
+        # Some tests may close the connection; teardown should remain non-fatal.
+        pass
+    try:
+        conn.close()
+    except Exception:
+        pass
 
 
 @pytest.fixture
@@ -65,7 +76,7 @@ def mock_auth(mock_clerk_user):
     Mock Clerk authentication dependency
     Use with app.dependency_overrides
     """
-    async def _mock_require_clerk_user(*args, **kwargs):
+    async def _mock_require_clerk_user(request=None):
         return mock_clerk_user
     return _mock_require_clerk_user
 
@@ -79,7 +90,7 @@ def client(mock_auth, mock_clerk_user):
     from backend.clerk_auth import require_clerk_user
     
     # Create sync version for current_user (it's not async)
-    def sync_mock(*args, **kwargs):
+    def sync_mock(request=None):
         return mock_clerk_user
     
     # Override both authentication functions

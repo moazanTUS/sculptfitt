@@ -77,8 +77,17 @@
             <h2>Analyze Body Image</h2>
           </div>
           <div class="stack">
+            <div class="captureGuide" id="photoGuide">
+              <p class="captureGuideTitle">Photo tips for best analysis</p>
+              <ul class="captureGuideList">
+                <li>Keep full body visible from head to feet.</li>
+                <li>Use bright lighting and avoid shadows.</li>
+                <li>Keep camera stable and straight.</li>
+              </ul>
+            </div>
             <label class="label">Upload photo</label>
             <input id="imageInput" type="file" accept="image/*" />
+            <p id="photoGuidanceStatus" class="guidanceStatus" aria-live="polite"></p>
 
             <label class="label">Training Level</label>
             <div class="optionsGrid">
@@ -175,8 +184,18 @@
               </select>
             </div>
             <div>
+              <div class="captureGuide" id="videoGuide">
+                <p class="captureGuideTitle">Video tips for best feedback</p>
+                <ul class="captureGuideList">
+                  <li>Record one exercise set, ideally 5 to 20 seconds.</li>
+                  <li>Keep your whole body in frame the entire time.</li>
+                  <li>Use a fixed camera and clear lighting.</li>
+                  <li>Supported formats: MP4, MOV, WEBM.</li>
+                </ul>
+              </div>
               <label class="label" for="videoInput">Upload clip</label>
               <input id="videoInput" type="file" accept="video/*" />
+              <p id="videoGuidanceStatus" class="guidanceStatus" aria-live="polite"></p>
             </div>
           </div>
 
