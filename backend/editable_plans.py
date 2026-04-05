@@ -212,31 +212,39 @@ def get_editable_plan(saved_id: int, clerk_user_id: str) -> dict[str, Any]:
 def update_day_title(user_day_id: int, clerk_user_id: str, title: str) -> None:
     with get_conn() as conn:
         with conn.cursor() as cur:
-            # Try user_workout_days first
+            # Check ownership in user_workout_days first (SELECT, not rowcount-dependent)
             cur.execute(
                 """
-                UPDATE user_workout_days d
+                SELECT d.id FROM user_workout_days d
                 JOIN user_workout_plans p ON p.id = d.user_plan_id
-                SET d.title=%s
                 WHERE d.id=%s AND p.clerk_user_id=%s;
                 """,
-                (title, user_day_id, clerk_user_id),
+                (user_day_id, clerk_user_id),
             )
-            if cur.rowcount > 0:
+            if cur.fetchone():
+                cur.execute(
+                    "UPDATE user_workout_days SET title=%s WHERE id=%s;",
+                    (title, user_day_id),
+                )
                 return
-            
-            # Try custom_workout_days if not found in user tables
+
+            # Check ownership in custom_workout_days
             cur.execute(
                 """
-                UPDATE custom_workout_days d
+                SELECT d.id FROM custom_workout_days d
                 JOIN custom_workouts cw ON cw.id = d.custom_workout_id
-                SET d.title=%s
                 WHERE d.id=%s AND cw.clerk_user_id=%s;
                 """,
-                (title, user_day_id, clerk_user_id),
+                (user_day_id, clerk_user_id),
             )
-            if cur.rowcount == 0:
-                raise ValueError("Day not found")
+            if cur.fetchone():
+                cur.execute(
+                    "UPDATE custom_workout_days SET title=%s WHERE id=%s;",
+                    (title, user_day_id),
+                )
+                return
+
+            raise ValueError("Day not found")
 
 
 def add_day_item(
