@@ -45,12 +45,19 @@ def register_video_library_routes(app):
                         e.name,
                         e.muscle_group,
                         e.difficulty,
+                        MAX(
+                            COALESCE(
+                                NULLIF(TRIM(e.description), ''),
+                                NULLIF(TRIM(e.instructions), ''),
+                                CONCAT('A ', LOWER(COALESCE(e.difficulty, 'intermediate')), ' ', LOWER(COALESCE(e.muscle_group, 'full body')), ' exercise.')
+                            )
+                        ) as description,
                         COUNT(ev.id) as video_count
                     FROM exercises e
                     LEFT JOIN exercise_videos ev ON e.id = ev.exercise_id
                     WHERE (e.name LIKE %s OR e.muscle_group LIKE %s)
                     AND e.id IN (SELECT exercise_id FROM exercise_videos)
-                    GROUP BY e.id
+                    GROUP BY e.id, e.name, e.muscle_group, e.difficulty
                     ORDER BY e.name
                 """, (search_term, search_term))
                 exercises = cur.fetchall()
@@ -71,10 +78,17 @@ def register_video_library_routes(app):
                         e.name,
                         e.muscle_group,
                         e.difficulty,
+                        MAX(
+                            COALESCE(
+                                NULLIF(TRIM(e.description), ''),
+                                NULLIF(TRIM(e.instructions), ''),
+                                CONCAT('A ', LOWER(COALESCE(e.difficulty, 'intermediate')), ' ', LOWER(COALESCE(e.muscle_group, 'full body')), ' exercise.')
+                            )
+                        ) as description,
                         COUNT(ev.id) as video_count
                     FROM exercises e
                     LEFT JOIN exercise_videos ev ON e.id = ev.exercise_id
-                    GROUP BY e.id
+                    GROUP BY e.id, e.name, e.muscle_group, e.difficulty
                     HAVING COUNT(ev.id) > 0
                     ORDER BY e.name
                 """)
@@ -92,7 +106,16 @@ def register_video_library_routes(app):
             with conn.cursor() as cur:
                 # Get exercise info
                 cur.execute("""
-                    SELECT id, name, muscle_group, difficulty
+                    SELECT
+                        id,
+                        name,
+                        muscle_group,
+                        difficulty,
+                        COALESCE(
+                            NULLIF(TRIM(description), ''),
+                            NULLIF(TRIM(instructions), ''),
+                            CONCAT('A ', LOWER(COALESCE(difficulty, 'intermediate')), ' ', LOWER(COALESCE(muscle_group, 'full body')), ' exercise.')
+                        ) as description
                     FROM exercises
                     WHERE id = %s
                 """, (exercise_id,))
@@ -140,12 +163,19 @@ def register_video_library_routes(app):
                         e.name,
                         e.muscle_group,
                         e.difficulty,
+                        MAX(
+                            COALESCE(
+                                NULLIF(TRIM(e.description), ''),
+                                NULLIF(TRIM(e.instructions), ''),
+                                CONCAT('A ', LOWER(COALESCE(e.difficulty, 'intermediate')), ' ', LOWER(COALESCE(e.muscle_group, 'full body')), ' exercise.')
+                            )
+                        ) as description,
                         COUNT(ev.id) as video_count
                     FROM exercises e
                     LEFT JOIN exercise_videos ev ON e.id = ev.exercise_id
                     WHERE e.muscle_group = %s
                     AND e.id IN (SELECT exercise_id FROM exercise_videos)
-                    GROUP BY e.id
+                    GROUP BY e.id, e.name, e.muscle_group, e.difficulty
                     ORDER BY e.name
                 """, (muscle_group,))
                 exercises = cur.fetchall()
