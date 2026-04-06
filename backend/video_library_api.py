@@ -47,8 +47,7 @@ def register_video_library_routes(app):
                         e.difficulty,
                         MAX(
                             COALESCE(
-                                NULLIF(TRIM(e.description), ''),
-                                NULLIF(TRIM(e.instructions), ''),
+                                NULLIF(TRIM(ev.description), ''),
                                 CONCAT('A ', LOWER(COALESCE(e.difficulty, 'intermediate')), ' ', LOWER(COALESCE(e.muscle_group, 'full body')), ' exercise.')
                             )
                         ) as description,
@@ -80,8 +79,7 @@ def register_video_library_routes(app):
                         e.difficulty,
                         MAX(
                             COALESCE(
-                                NULLIF(TRIM(e.description), ''),
-                                NULLIF(TRIM(e.instructions), ''),
+                                NULLIF(TRIM(ev.description), ''),
                                 CONCAT('A ', LOWER(COALESCE(e.difficulty, 'intermediate')), ' ', LOWER(COALESCE(e.muscle_group, 'full body')), ' exercise.')
                             )
                         ) as description,
@@ -110,12 +108,7 @@ def register_video_library_routes(app):
                         id,
                         name,
                         muscle_group,
-                        difficulty,
-                        COALESCE(
-                            NULLIF(TRIM(description), ''),
-                            NULLIF(TRIM(instructions), ''),
-                            CONCAT('A ', LOWER(COALESCE(difficulty, 'intermediate')), ' ', LOWER(COALESCE(muscle_group, 'full body')), ' exercise.')
-                        ) as description
+                        difficulty
                     FROM exercises
                     WHERE id = %s
                 """, (exercise_id,))
@@ -142,6 +135,24 @@ def register_video_library_routes(app):
                     ORDER BY created_at DESC
                 """, (exercise_id,))
                 videos = cur.fetchall()
+
+                # Keep details endpoint compatible with older DB schemas that
+                # don't include exercises.description/instructions.
+                first_video_desc = next(
+                    (
+                        (v.get("description") or "").strip()
+                        for v in (videos or [])
+                        if (v.get("description") or "").strip()
+                    ),
+                    "",
+                )
+                if first_video_desc:
+                    exercise["description"] = first_video_desc
+                else:
+                    exercise["description"] = (
+                        f"A {(exercise.get('difficulty') or 'intermediate').lower()} "
+                        f"{(exercise.get('muscle_group') or 'full body').lower()} exercise."
+                    )
                 
                 exercise['videos'] = videos if videos else []
                 return exercise
@@ -165,8 +176,7 @@ def register_video_library_routes(app):
                         e.difficulty,
                         MAX(
                             COALESCE(
-                                NULLIF(TRIM(e.description), ''),
-                                NULLIF(TRIM(e.instructions), ''),
+                                NULLIF(TRIM(ev.description), ''),
                                 CONCAT('A ', LOWER(COALESCE(e.difficulty, 'intermediate')), ' ', LOWER(COALESCE(e.muscle_group, 'full body')), ' exercise.')
                             )
                         ) as description,
