@@ -75,7 +75,7 @@ if not GEMINI_API_KEY:
 
 print(f"[STARTUP] Using GEMINI_API_KEY: {GEMINI_API_KEY[:20]}...")  # Show first 20 chars
 
-app = FastAPI(title="SculpFit Web API")
+app = FastAPI(title="SculptFit Web API")
 
 # Rate limiting - per user (authenticated endpoints use user ID, others use IP)
 def get_rate_limit_key(request: Request) -> str:

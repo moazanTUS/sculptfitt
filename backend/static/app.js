@@ -2158,7 +2158,7 @@
 
       // Show auth message
 
-      alert("Please sign in to use SculpFit");
+      alert("Please sign in to use SculptFit");
 
       Clerk.mountSignIn(document.getElementById("signIn") || document.body);
 

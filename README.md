@@ -1,4 +1,4 @@
-# SculpFit - AI-Powered Workout Analysis Platform
+# SculptFit - AI-Powered Workout Analysis Platform
 
 A full-stack web application that uses AI and computer vision to analyze workout form, generate personalized fitness plans, and track progress.
 
