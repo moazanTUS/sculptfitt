@@ -588,6 +588,35 @@ body::before {
   }
 }
 
+/* Analyze Body page: compact radio controls */
+#image-page .optionsGrid {
+  gap: 8px;
+}
+
+#image-page .optionLabel {
+  padding: 8px 10px;
+  gap: 8px;
+  font-size: 12px;
+}
+
+#image-page .optionLabel input[type="radio"] {
+  width: 11px;
+  height: 11px;
+  border-width: 1.5px;
+}
+
+@media (min-width: 640px) {
+  #image-page .optionLabel {
+    padding: 9px 11px;
+    font-size: 13px;
+  }
+
+  #image-page .optionLabel input[type="radio"] {
+    width: 12px;
+    height: 12px;
+  }
+}
+
 input,
 select {
   width: 100%;
