@@ -240,23 +240,37 @@ def me(user=Depends(current_user)):
 def available_plans(days: int = None):
     """
     Get all available workout plans.
-    Optional query param: days=3 or days=5 to filter by workout days.
+    Optional query param: days=<positive integer> to filter by workout days.
     
     Returns plans grouped by days_per_week, or filtered if days param provided.
     """
     try:
-        if days and days not in (3, 5):
+        if days is not None and days <= 0:
             return JSONResponse(status_code=400, content={
                 "success": False, 
-                "error": "Invalid days value. Must be 3 or 5."
+                "error": "Invalid days value. Must be a positive integer."
             })
         
         with get_conn() as conn:
             with conn.cursor() as cur:
-                if days:
-                    cur.execute("SELECT id, name, days_per_week, primary_focus FROM workout_plans WHERE days_per_week = %s ORDER BY id ASC;", (days,))
+                if days is not None:
+                    cur.execute(
+                        """
+                        SELECT id, name, body_type, primary_focus, difficulty, days_per_week
+                        FROM workout_plans
+                        WHERE days_per_week = %s
+                        ORDER BY id ASC;
+                        """,
+                        (days,),
+                    )
                 else:
-                    cur.execute("SELECT id, name, days_per_week, primary_focus FROM workout_plans ORDER BY days_per_week ASC, id ASC;")
+                    cur.execute(
+                        """
+                        SELECT id, name, body_type, primary_focus, difficulty, days_per_week
+                        FROM workout_plans
+                        ORDER BY days_per_week ASC, id ASC;
+                        """
+                    )
                 rows = cur.fetchall()
         
         # Group by days_per_week
@@ -268,8 +282,10 @@ def available_plans(days: int = None):
             plans[day_count].append({
                 "id": row["id"],
                 "name": row["name"],
+                "body_type": row.get("body_type"),
                 "days_per_week": row["days_per_week"],
-                "primary_focus": row["primary_focus"]
+                "primary_focus": row.get("primary_focus"),
+                "difficulty": row.get("difficulty"),
             })
         
         return {"success": True, "plans": plans}
@@ -288,8 +304,13 @@ def get_plan_details(plan_id: int):
             with conn.cursor() as cur:
                 # Get plan metadata
                 cur.execute(
-                    "SELECT id, name, days_per_week, primary_focus FROM workout_plans WHERE id = %s LIMIT 1;",
-                    (plan_id,)
+                    """
+                    SELECT id, name, days_per_week, primary_focus, difficulty
+                    FROM workout_plans
+                    WHERE id = %s
+                    LIMIT 1;
+                    """,
+                    (plan_id,),
                 )
                 plan = cur.fetchone()
                 
@@ -302,34 +323,95 @@ def get_plan_details(plan_id: int):
                 # Get exercises for pre-built plans using plan_exercises
                 cur.execute(
                     """
-                    SELECT pe.day_number as day, ex.name as exercise, ex.muscle_group, 
-                           pe.sets, pe.reps, pe.rest_seconds
+                    SELECT pe.day_number as day,
+                           COALESCE(ex.name, CONCAT('Exercise #', pe.exercise_id)) as exercise,
+                           ex.muscle_group,
+                           pe.sets,
+                           pe.reps,
+                           pe.rest_seconds
                     FROM plan_exercises pe
                     LEFT JOIN exercises ex ON pe.exercise_id = ex.id
                     WHERE pe.plan_id = %s
                     ORDER BY pe.day_number ASC, pe.position ASC;
                     """,
-                    (plan_id,)
+                    (plan_id,),
                 )
                 exercises_raw = cur.fetchall()
-                
-                # Organize into days with items
-                days_dict = {}
+
+                focus = str(plan.get("primary_focus") or "").strip().lower()
+                strict_focus = focus in {"chest", "back", "shoulders", "legs"}
+                plan_difficulty = str(plan.get("difficulty") or "intermediate").strip().lower()
+
+                def _infer_group_from_name(name: str) -> str | None:
+                    n = (name or "").lower()
+                    if any(k in n for k in ("squat", "lunge", "leg", "calf", "deadlift", "hamstring", "quad", "glute")):
+                        return "legs"
+                    if any(k in n for k in ("bench", "fly", "push-up", "push up", "chest", "dip")):
+                        return "chest"
+                    if any(k in n for k in ("row", "pulldown", "pull-up", "pull up", "chin-up", "chin up", "lat")):
+                        return "back"
+                    if any(k in n for k in ("press", "raise", "shoulder")):
+                        return "shoulders"
+                    return None
+
+                def _matches_focus(muscle_group: str | None, exercise_name: str) -> bool:
+                    if not strict_focus:
+                        return True
+                    mg = str(muscle_group or "").strip().lower()
+                    if focus == "legs":
+                        if mg in {"legs", "core"}:
+                            return True
+                    elif mg == focus:
+                        return True
+                    inferred = _infer_group_from_name(exercise_name)
+                    if focus == "legs":
+                        return inferred in {"legs"}
+                    return inferred == focus
+
+                # Always include all plan days, even if source data is incomplete.
+                days_dict = {d: {"day": d, "items": []} for d in range(1, int(plan["days_per_week"]) + 1)}
                 for row in exercises_raw:
                     day_num = row.get("day")
                     if day_num not in days_dict:
                         days_dict[day_num] = {"day": day_num, "items": []}
-                    
-                    # Only add item if exercise exists (not NULL)
-                    if row.get("exercise"):
-                        days_dict[day_num]["items"].append({
-                            "exercise": row.get("exercise"),
-                            "muscle_group": row.get("muscle_group"),
-                            "sets": row.get("sets"),
-                            "reps": row.get("reps"),
-                            "rest_seconds": row.get("rest_seconds")
-                        })
-                
+
+                    if not _matches_focus(row.get("muscle_group"), row.get("exercise") or ""):
+                        continue
+
+                    days_dict[day_num]["items"].append({
+                        "exercise": row.get("exercise"),
+                        "muscle_group": row.get("muscle_group"),
+                        "sets": row.get("sets"),
+                        "reps": row.get("reps"),
+                        "rest_seconds": row.get("rest_seconds"),
+                    })
+
+                # Fallback when strict-focus templates are misconfigured in DB.
+                if strict_focus:
+                    for day_num, day_data in days_dict.items():
+                        if day_data["items"]:
+                            continue
+                        cur.execute(
+                            """
+                            SELECT name, muscle_group
+                            FROM exercises
+                            WHERE muscle_group = %s
+                              AND difficulty IN (%s, 'intermediate', 'beginner')
+                            ORDER BY FIELD(difficulty, %s, 'intermediate', 'beginner'), id ASC
+                            LIMIT 3;
+                            """,
+                            (focus, plan_difficulty, plan_difficulty),
+                        )
+                        fallback_items = cur.fetchall()
+                        for ex in fallback_items:
+                            day_data["items"].append({
+                                "exercise": ex.get("name"),
+                                "muscle_group": ex.get("muscle_group"),
+                                "sets": 4 if plan_difficulty == "advanced" else 3,
+                                "reps": "3-8" if plan_difficulty == "advanced" else "6-12",
+                                "rest_seconds": 120 if plan_difficulty == "advanced" else 90,
+                            })
+
                 days = sorted(days_dict.values(), key=lambda x: x["day"])
                 
                 return {
@@ -338,7 +420,8 @@ def get_plan_details(plan_id: int):
                         "id": plan["id"],
                         "name": plan["name"],
                         "primary_focus": plan["primary_focus"],
-                        "days_per_week": plan["days_per_week"]
+                        "days_per_week": plan["days_per_week"],
+                        "difficulty": plan.get("difficulty"),
                     },
                     "days": days
                 }
