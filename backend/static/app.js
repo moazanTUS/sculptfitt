@@ -3789,7 +3789,7 @@
 
               <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">
 
-                ${ex.total_times_completed} times • ${ex.personal_record_weight ? ex.personal_record_weight + ' lbs PR' : 'No weight'}
+                ${ex.total_times_completed} times • ${ex.personal_record_weight ? ex.personal_record_weight + ' kgs PR' : 'No weight'}
 
               </div>
 
@@ -3957,7 +3957,7 @@
                     ${ex.weight_used ? `
                       <div>
                         <p class="workoutMetricLabel">Weight</p>
-                        <p class="workoutMetricValue">${ex.weight_used} lbs</p>
+                        <p class="workoutMetricValue">${ex.weight_used} kgs</p>
                       </div>
                     ` : ''}
                     ${ex.rpe ? `
@@ -4107,7 +4107,7 @@
 
           <div>
 
-            <label style="color: var(--muted); display: block; margin-bottom: 4px;">Weight (lbs)</label>
+            <label style="color: var(--muted); display: block; margin-bottom: 4px;">Weight (kgs)</label>
 
             <input type="number" class="weight-used" data-ex-id="${ex.id}" min="0" step="0.5" placeholder="0" value="${ex.weight_used || ''}" style="width: 100%; padding: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 4px;">
 
