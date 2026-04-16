@@ -1431,12 +1431,12 @@ input[type="radio"]:checked+span {
 
 /* Force compact radios on Analyze Body page (final override) */
 #image-page input[type="radio"] {
-  width: 9px !important;
-  height: 9px !important;
-  min-width: 9px !important;
-  min-height: 9px !important;
-  max-width: 9px !important;
-  max-height: 9px !important;
+  width: 5px !important;
+  height: 5px !important;
+  min-width: 5px !important;
+  min-height: 5px !important;
+  max-width: 5px !important;
+  max-height: 5px !important;
   aspect-ratio: 1 / 1 !important;
   border-radius: 50% !important;
   border-width: 1px !important;
