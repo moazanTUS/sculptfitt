@@ -1449,12 +1449,12 @@ input[type="radio"]:checked+span {
 
 @media (min-width: 640px) {
   #image-page input[type="radio"] {
-    width: 10px !important;
-    height: 10px !important;
-    min-width: 10px !important;
-    min-height: 10px !important;
-    max-width: 10px !important;
-    max-height: 10px !important;
+    width: 5px !important;
+    height: 5px !important;
+    min-width: 5px !important;
+    min-height: 5px !important;
+    max-width: 5px !important;
+    max-height: 5px !important;
   }
 
   #image-page input[type="radio"]:checked {
