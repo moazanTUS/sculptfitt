@@ -1546,14 +1546,11 @@
 
 
 
-      const focusLabel = (plan.primary_focus || "general").toString().toUpperCase();
-      const difficultyLabel = plan.difficulty ? ` | ${plan.difficulty}` : "";
-
       card.innerHTML = `
 
         <p class="planCardTitle" style="font-size: 13px; margin: 0 0 4px 0; font-weight: bold;">${escapeHtml(plan.name)}</p>
 
-        <p class="planCardSub" style="font-size: 11px; margin: 0 0 8px 0; color: var(--muted);">${escapeHtml(focusLabel)} | ${plan.days}d${escapeHtml(difficultyLabel)}</p>
+        <p class="planCardSub" style="font-size: 11px; margin: 0 0 8px 0; color: var(--muted);">${plan.primary_focus.toUpperCase()} • ${plan.days}d</p>
 
         <div style="display: flex; gap: 6px; margin-bottom: 10px;">
 
@@ -1701,7 +1698,7 @@
 
           saveBtn.disabled = false;
 
-          saveBtn.textContent = "Save";
+          saveBtn.textContent = "Save Workout";
 
         }
 
