@@ -2578,7 +2578,7 @@
 
             <div id="progressStep1" style="font-size: 14px; margin: 8px 0; color: var(--muted);">
 
-              <span style="display: inline-block; width: 20px;">â³</span> Detecting pose...
+              <span style="display: inline-block; width: 20px;">&#x23F3;</span> Detecting pose...
 
             </div>
 
@@ -3302,7 +3302,7 @@
 
             <div style="background: linear-gradient(135deg, rgba(255, 99, 71, 0.1) 0%, rgba(255, 99, 71, 0.05) 100%); border: 1px solid rgba(255, 99, 71, 0.3); border-radius: 12px; padding: 24px; text-align: center;">
 
-              <p style="color: #ff6347; margin: 0 0 16px 0; font-size: 16px; font-weight: bold;">âŒ Analysis Failed</p>
+              <p style="color: #ff6347; margin: 0 0 16px 0; font-size: 16px; font-weight: bold;">&#x274C; Analysis Failed</p>
 
               <p style="color: #f0f4ff; margin: 0; font-size: 14px;">Error: ${data.message}</p>
 
@@ -3334,7 +3334,7 @@
 
           <div style="background: linear-gradient(135deg, rgba(255, 99, 71, 0.1) 0%, rgba(255, 99, 71, 0.05) 100%); border: 1px solid rgba(255, 99, 71, 0.3); border-radius: 12px; padding: 24px; text-align: center;">
 
-            <p style="color: #ff6347; margin: 0 0 16px 0; font-size: 16px; font-weight: bold;">âŒ Connection Failed</p>
+            <p style="color: #ff6347; margin: 0 0 16px 0; font-size: 16px; font-weight: bold;">&#x274C; Connection Failed</p>
 
             <p style="color: #f0f4ff; margin: 0; font-size: 14px;">Could not connect to analysis server.</p>
 
@@ -4549,7 +4549,7 @@
 
               <div style="background: var(--bg); padding: 12px; border-radius: 6px;">
 
-                <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: bold; color: #d45d5d;">âŒ Common Mistakes:</p>
+                <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: bold; color: #d45d5d;">&#x274C; Common Mistakes:</p>
 
                 <p style="margin: 0; font-size: 12px; color: var(--text); line-height: 1.5; white-space: pre-wrap;">${escapeHtml(video.common_mistakes || 'None listed')}</p>
 
